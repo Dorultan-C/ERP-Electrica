@@ -19,21 +19,21 @@ This roadmap outlines the complete development phases for the ERP system, starti
 - [+] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
 
 ### 1.3 Dummy Data Creation
-- [-] 1.3.1 Create comprehensive dummy data for users
-- [-] 1.3.2 Create dummy data for all HR module entities
-- [-] 1.3.3 Create sample permission sets and roles
-- [-] 1.3.4 Create module configuration data
+- [+] 1.3.1 Create comprehensive dummy data for users
+- [+] 1.3.2 Create dummy data for all HR module entities
+- [+] 1.3.3 Create sample permission sets and roles
+- [+] 1.3.4 Create module configuration data
 
 ---
 
 ## Phase 2: Web Core Layout & Navigation Prototype
 
 ### 2.1 App Shell & Header
-- [ ] 2.1.1 Create main layout component with responsive design
-- [ ] 2.1.2 Implement header with module navigation button
-- [ ] 2.1.3 Create dashboard button component
-- [ ] 2.1.4 Add notifications button with badge counter
-- [ ] 2.1.5 Implement profile dropdown menu
+- [+] 2.1.1 Create main layout component with responsive design
+- [+] 2.1.2 Implement header with module navigation button
+- [+] 2.1.3 Create dashboard button component
+- [+] 2.1.4 Add notifications button with badge counter
+- [+] 2.1.5 Implement profile dropdown menu
 
 ### 2.2 Module Navigation System
 - [ ] 2.2.1 Create full-screen module grid overlay
