@@ -134,6 +134,14 @@ The app is organized into modules accessed via a full-screen grid menu:
 - Implement TypeScript interfaces that work for both dummy and real data
 - Design with mobile adaptation in mind throughout web development
 
+## Roadmap Task Status System
+
+Use this marking system in `dev_notes/roadmap.md` to track task progress:
+- `- [ ]` - Not started
+- `- [*]` - Started/In progress
+- `- [-]` - Completed (ready for review)
+- `- [+]` - Reviewed and approved (closed)
+
 ## Project Status
 
 This is an early-stage project with comprehensive planning documentation but no implemented code yet. The specifications are defined in:

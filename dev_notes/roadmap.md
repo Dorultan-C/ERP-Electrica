@@ -7,16 +7,16 @@ This roadmap outlines the complete development phases for the ERP system, starti
 ## Phase 1: Web Frontend Prototype Foundation
 
 ### 1.1 Next.js Project Setup
-- [ ] 1.1.1 Initialize Next.js project with TypeScript template
-- [ ] 1.1.2 Configure TypeScript with strict mode enabled
-- [ ] 1.1.3 Install and configure Tailwind CSS
-- [ ] 1.1.4 Set up ESLint and Prettier
+- [+] 1.1.1 Initialize Next.js project with TypeScript template
+- [+] 1.1.2 Configure TypeScript with strict mode enabled
+- [+] 1.1.3 Install and configure Tailwind CSS
+- [+] 1.1.4 Set up ESLint and Prettier
 
 ### 1.2 Project Structure & TypeScript Types
-- [ ] 1.2.1 Create folder structure: `components/`, `lib/`, `types/`, `data/`, `shared/`
-- [ ] 1.2.2 Create `shared/` directory for future web/mobile component sharing
-- [ ] 1.2.3 Create core TypeScript interfaces (User, Module, Permission, etc.)
-- [ ] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
+- [+] 1.2.1 Create folder structure: `components/`, `lib/`, `types/`, `data/`, `shared/`
+- [+] 1.2.2 Create `shared/` directory for future web/mobile component sharing
+- [+] 1.2.3 Create core TypeScript interfaces (User, Module, Permission, etc.)
+- [+] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
 
 ### 1.3 Dummy Data Creation
 - [ ] 1.3.1 Create comprehensive dummy data for users
