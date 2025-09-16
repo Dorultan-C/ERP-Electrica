@@ -2,7 +2,7 @@
 // Based on specifications in dev_notes/feachures.md
 
 import type { ScheduleDay } from "./index";
-import type { Message, EmployeeInfo } from "./common";
+import type { EmployeeInfo, Message } from "./common";
 
 // Vacation/Leave interfaces
 export interface Vacation {
@@ -18,7 +18,14 @@ export interface Vacation {
   reviewedAt?: Date;
 }
 
-// Message interface moved to shared/types
+export type VacationType =
+  | "annual_leave"
+  | "sick_leave"
+  | "personal_leave"
+  | "maternity_leave"
+  | "paternity_leave"
+  | "public_holiday"
+  | "closing_day";
 
 export type VacationStatus =
   | "pending"

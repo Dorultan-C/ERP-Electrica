@@ -19,10 +19,10 @@ This roadmap outlines the complete development phases for the ERP system, starti
 - [+] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
 
 ### 1.3 Dummy Data Creation
-- [ ] 1.3.1 Create comprehensive dummy data for users
-- [ ] 1.3.2 Create dummy data for all HR module entities
-- [ ] 1.3.3 Create sample permission sets and roles
-- [ ] 1.3.4 Create module configuration data
+- [-] 1.3.1 Create comprehensive dummy data for users
+- [-] 1.3.2 Create dummy data for all HR module entities
+- [-] 1.3.3 Create sample permission sets and roles
+- [-] 1.3.4 Create module configuration data
 
 ---
 

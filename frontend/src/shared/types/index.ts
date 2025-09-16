@@ -117,7 +117,7 @@ export interface Notification {
   type: NotificationType;
   isRead: boolean;
   createdAt: Date;
-  seenAt: Date;
+  seenAt?: Date;
   data?: Record<string, unknown>;
 }
 
