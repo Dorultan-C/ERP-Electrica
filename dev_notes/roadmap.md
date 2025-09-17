@@ -43,9 +43,9 @@ This roadmap outlines the complete development phases for the ERP system, starti
 
 ### 2.3 Side Drawer Navigation
 - [+] 2.3.1 Implement collapsible side drawer
-- [ ] 2.3.2 Create icon-only and expanded states
-- [ ] 2.3.3 Add section navigation functionality
-- [ ] 2.3.4 Ensure mobile-friendly interaction patterns
+- [+] 2.3.2 Create icon-only and expanded states
+- [+] 2.3.3 Add section navigation functionality
+- [+] 2.3.4 Ensure mobile-friendly interaction patterns
 
 ---
 
