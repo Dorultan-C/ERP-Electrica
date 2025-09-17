@@ -1,21 +1,23 @@
 'use client'
 
-import React, { useState } from 'react'
+import React from 'react'
 import ModuleNavigationButton from '../ui/ModuleNavigationButton'
 import DashboardButton from '../ui/DashboardButton'
 import NotificationButton from '../ui/NotificationButton'
 import ProfileDropdown from '../ui/ProfileDropdown'
 import ModuleGrid from '../ui/ModuleGrid'
+import { useNavigation } from '../../shared/contexts/NavigationContext'
+import { useKeyboardShortcuts } from '../../shared/hooks/useKeyboardShortcuts'
 
 export default function Header() {
-  const [moduleMenuOpen, setModuleMenuOpen] = useState(false)
+  const { moduleMenuOpen, toggleModuleMenu, closeModuleMenu, setSelectedModule } = useNavigation()
 
-  const handleModuleToggle = () => {
-    setModuleMenuOpen(!moduleMenuOpen)
-  }
+  // Enable keyboard shortcuts
+  useKeyboardShortcuts()
 
-  const handleModuleClose = () => {
-    setModuleMenuOpen(false)
+  const handleModuleSelect = (moduleId: string) => {
+    setSelectedModule(moduleId)
+    // Module context will handle closing the menu
   }
 
   return (
@@ -27,7 +29,7 @@ export default function Header() {
           <div className="flex items-center space-x-4">
             <ModuleNavigationButton
               isOpen={moduleMenuOpen}
-              onToggle={handleModuleToggle}
+              onToggle={toggleModuleMenu}
             />
 
             <DashboardButton />
@@ -50,7 +52,11 @@ export default function Header() {
       </header>
 
       {/* Module Grid Overlay */}
-      <ModuleGrid isOpen={moduleMenuOpen} onClose={handleModuleClose} />
+      <ModuleGrid
+        isOpen={moduleMenuOpen}
+        onClose={closeModuleMenu}
+        onModuleSelect={handleModuleSelect}
+      />
     </>
   )
 }

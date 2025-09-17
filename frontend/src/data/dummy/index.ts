@@ -7,6 +7,7 @@ export * from "./users";
 export * from "./hr";
 export * from "./permissions";
 export * from "./modules";
+export * from "./notifications";
 
 
 // Configuration for dummy data behavior
@@ -20,6 +21,7 @@ export const DUMMY_DATA_CONFIG = {
   enableHR: true,
   enablePermissions: true,
   enableModules: true,
+  enableNotifications: true,
 
   // Default pagination settings
   defaultPageSize: 10,

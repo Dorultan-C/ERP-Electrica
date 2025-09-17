@@ -1,6 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
+import { dummyNotifications } from '@/data/dummy'
+import { formatTimeAgo } from '@/shared/utils/ui'
+import { getNotificationTheme } from '@/lib/notificationThemes'
 
 interface NotificationButtonProps {
   count?: number
@@ -27,12 +30,18 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
     setIsDropdownOpen(false)
   }
 
+  const handleDismissNotification = (notificationId: string, event: React.MouseEvent) => {
+    event.stopPropagation()
+    // TODO: Implement individual notification dismissal
+    console.log('Dismiss notification:', notificationId)
+  }
+
   return (
     <div className="relative">
       {/* Notification Button */}
       <button
         onClick={handleClick}
-        className="relative p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+        className="relative p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
         aria-label="Notifications"
       >
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,74 +74,53 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
               </h3>
               <button
                 onClick={handleMarkAllAsRead}
-                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none"
+                className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none flex items-center space-x-1 cursor-pointer"
                 aria-label="Mark all as seen"
               >
-                Mark all as seen
+                <span className="leading-none">All</span>
+                <svg className="w-4 h-4 mb-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
               </button>
             </div>
 
             {/* Notification List */}
             <div className="max-h-96 overflow-y-auto">
-              {count > 0 ? (
+              {dummyNotifications.length > 0 ? (
                 <>
-                  {/* Sample Notifications */}
-                  <div className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-2 h-2 bg-blue-600 rounded-full mt-2"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          New vacation request
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          John Doe has requested vacation from March 15-20
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          2 hours ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-2 h-2 bg-green-600 rounded-full mt-2"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          Timesheet approved
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Your timesheet for week 11 has been approved
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          5 hours ago
-                        </p>
+                  {dummyNotifications.map((notification) => (
+                    <div key={notification.id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer group">
+                      <div className="flex items-start space-x-3">
+                        <div className="flex-shrink-0 flex items-center h-5">
+                          <div className={`w-2 h-2 ${getNotificationTheme(notification.type).dotColor} rounded-full`}></div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {notification.title}
+                          </p>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                            {formatTimeAgo(notification.createdAt)}
+                          </p>
+                        </div>
+                        <div className="flex-shrink-0 flex items-center h-5">
+                          <button
+                            onClick={(e) => handleDismissNotification(notification.id, e)}
+                            className="opacity-0 group-hover:opacity-100 p-1 rounded text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-opacity cursor-pointer"
+                            aria-label="Mark as read"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-
-                  <div className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
-                    <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
-                        <div className="w-2 h-2 bg-yellow-600 rounded-full mt-2"></div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          System maintenance
-                        </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          Scheduled maintenance on Sunday at 2:00 AM
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                          1 day ago
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  ))}
                 </>
               ) : (
                 <div className="p-8 text-center">
@@ -147,11 +135,11 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
             </div>
 
             {/* Footer */}
-            {count > 3 && (
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+            {dummyNotifications.length > 3 && (
+              <div className="px-4 py-1 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleShowAll}
-                  className="w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none"
+                  className="w-full text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none cursor-pointer"
                 >
                   Show all notifications
                 </button>

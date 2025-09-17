@@ -1,6 +1,8 @@
 // Core TypeScript interfaces for the ERP system
 // These interfaces work with both dummy and real data
 
+import React from 'react'
+
 export interface User {
   id: string;
   username: string;
@@ -88,13 +90,14 @@ export interface Module {
   id: string;
   name: string;
   title: string;
-  description?: string;
-  icon: string;
+  description: string;
+  icon: React.ReactNode;
   route: string;
   sectionIds: string[];
   requiredPermissionId: string;
   isActive: boolean;
   order: number;
+  isComingSoon?: boolean;
 }
 
 export interface ModuleSection {
