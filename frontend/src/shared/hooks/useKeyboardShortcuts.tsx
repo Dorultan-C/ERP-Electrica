@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react'
 import { useNavigation } from '../contexts/NavigationContext'
+import { modules } from '@/data/modules'
 
 export function useKeyboardShortcuts() {
-  const { moduleMenuOpen, closeModuleMenu, toggleModuleMenu } = useNavigation()
+  const { moduleMenuOpen, closeModuleMenu, toggleModuleMenu, setSelectedModule } = useNavigation()
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -28,6 +29,19 @@ export function useKeyboardShortcuts() {
         toggleModuleMenu()
         return
       }
+
+      // Number keys 1-9 - Navigate to module (only when module menu is open)
+      if (moduleMenuOpen && /^[1-9]$/.test(event.key)) {
+        event.preventDefault()
+        const moduleIndex = parseInt(event.key) - 1
+        const targetModule = modules[moduleIndex]
+
+        if (targetModule && targetModule.isActive) {
+          console.log(`Navigate to ${targetModule.title}:`, targetModule.route)
+          setSelectedModule(targetModule.id)
+        }
+        return
+      }
     }
 
     document.addEventListener('keydown', handleKeyDown)
@@ -35,7 +49,7 @@ export function useKeyboardShortcuts() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [moduleMenuOpen, closeModuleMenu, toggleModuleMenu])
+  }, [moduleMenuOpen, closeModuleMenu, toggleModuleMenu, setSelectedModule])
 }
 
 // Custom hook for component-specific shortcuts

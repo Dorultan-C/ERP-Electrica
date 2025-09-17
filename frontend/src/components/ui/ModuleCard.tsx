@@ -7,9 +7,10 @@ import { type Module } from '@/shared/types'
 interface ModuleCardProps {
   module: Module
   onClick: (module: Module) => void
+  index?: number
 }
 
-export default function ModuleCard({ module, onClick }: ModuleCardProps) {
+export default function ModuleCard({ module, onClick, index }: ModuleCardProps) {
   const theme = getModuleTheme(module.id)
 
   if (module.isComingSoon) {
@@ -31,9 +32,16 @@ export default function ModuleCard({ module, onClick }: ModuleCardProps) {
   return (
     <button
       onClick={() => onClick(module)}
-      className={`flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg hover:shadow-blue-500/10 border border-gray-200 dark:border-gray-700 ${theme.border} ${theme.borderDark} transition-all duration-200 hover:scale-105 hover:-translate-y-1 group w-full h-[180px] justify-center ${module.isActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+      className={`relative flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg hover:shadow-blue-500/10 border border-gray-200 dark:border-gray-700 ${theme.border} ${theme.borderDark} transition-all duration-200 hover:scale-105 hover:-translate-y-1 group w-full h-[180px] justify-center ${module.isActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
       disabled={!module.isActive}
     >
+      {/* Number indicator */}
+      {typeof index === 'number' && index < 9 && module.isActive && (
+        <div className="absolute top-2 right-2 w-5 h-5 bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-xs font-medium rounded-full flex items-center justify-center opacity-60">
+          {index + 1}
+        </div>
+      )}
+
       <div className="flex flex-col items-center space-y-3">
         <div className={`w-12 h-12 ${theme.bg} ${theme.bgDark} rounded-lg flex items-center justify-center ${theme.hoverBg} ${theme.hoverBgDark} transition-all duration-200 group-hover:scale-110`}>
           <div className={`${theme.text} ${theme.textDark} transition-transform duration-200 group-hover:scale-110`}>
