@@ -8,9 +8,10 @@ interface ModuleCardProps {
   module: Module
   onClick: (module: Module) => void
   index?: number
+  isSelected?: boolean
 }
 
-export default function ModuleCard({ module, onClick, index }: ModuleCardProps) {
+export default function ModuleCard({ module, onClick, index, isSelected = false }: ModuleCardProps) {
   const theme = getModuleTheme(module.id)
 
   if (module.isComingSoon) {
@@ -32,7 +33,13 @@ export default function ModuleCard({ module, onClick, index }: ModuleCardProps) 
   return (
     <button
       onClick={() => onClick(module)}
-      className={`relative flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg hover:shadow-blue-500/10 border border-gray-200 dark:border-gray-700 ${theme.border} ${theme.borderDark} transition-all duration-200 hover:scale-105 hover:-translate-y-1 group w-full h-[180px] justify-center ${module.isActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'}`}
+      className={`relative flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-lg hover:shadow-blue-500/10 border transition-all duration-200 hover:scale-105 hover:-translate-y-1 group w-full h-[180px] justify-center ${
+        module.isActive ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+      } ${
+        isSelected
+          ? 'border-blue-500 border-2 ring-4 ring-blue-500/30 shadow-xl shadow-blue-500/20'
+          : `border-gray-200 dark:border-gray-700 ${theme.border} ${theme.borderDark}`
+      }`}
       disabled={!module.isActive}
     >
       {/* Number indicator */}

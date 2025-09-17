@@ -9,9 +9,10 @@ interface ModuleGridProps {
   isOpen: boolean
   onClose: () => void
   onModuleSelect?: (moduleId: string) => void
+  selectedModuleId?: string | null
 }
 
-export default function ModuleGrid({ isOpen, onClose, onModuleSelect }: ModuleGridProps) {
+export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedModuleId }: ModuleGridProps) {
   useEffect(() => {
     // Handle body scroll locking when module grid is open
     if (isOpen) {
@@ -85,6 +86,7 @@ export default function ModuleGrid({ isOpen, onClose, onModuleSelect }: ModuleGr
                 module={module}
                 onClick={handleModuleClick}
                 index={index}
+                isSelected={selectedModuleId === module.id}
               />
             ))}
           </div>

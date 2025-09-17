@@ -105,7 +105,7 @@ export interface ModuleSection {
   name: string;
   title: string;
   description?: string;
-  icon: string;
+  icon: React.ReactNode;
   route: string;
   requiredPermissionId: string;
   isActive: boolean;

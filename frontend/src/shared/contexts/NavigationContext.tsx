@@ -1,6 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useState, useCallback } from 'react'
+import { modules } from '@/data/modules'
+import { sections } from '@/data/sections'
 
 interface NavigationContextType {
   // Module navigation state
@@ -13,7 +15,11 @@ interface NavigationContextType {
   selectedModuleId: string | null
   setSelectedModule: (moduleId: string | null) => void
 
-  // Side drawer state (for future implementation)
+  // Selected section state
+  selectedSectionId: string | null
+  setSelectedSection: (sectionId: string | null) => void
+
+  // Side drawer state
   sideDrawerOpen: boolean
   sideDrawerExpanded: boolean
   toggleSideDrawer: () => void
@@ -38,8 +44,9 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Module menu state
   const [moduleMenuOpen, setModuleMenuOpen] = useState(false)
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null)
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
 
-  // Side drawer state (for future Phase 2.3)
+  // Side drawer state
   const [sideDrawerOpen, setSideDrawerOpen] = useState(false)
   const [sideDrawerExpanded, setSideDrawerExpanded] = useState(true)
 
@@ -59,13 +66,35 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
   // Module selection
   const setSelectedModule = useCallback((moduleId: string | null) => {
     setSelectedModuleId(moduleId)
-    // Auto-close module menu when a module is selected
+
+    // Auto-select first section when module is selected
     if (moduleId) {
+      const currentModule = modules.find(m => m.id === moduleId)
+      if (currentModule) {
+        const currentSections = sections
+          .filter(s => currentModule.sectionIds.includes(s.id) && s.isActive)
+          .sort((a, b) => a.order - b.order)
+
+        // Select first available section
+        if (currentSections.length > 0) {
+          setSelectedSectionId(currentSections[0]!.id)
+        } else {
+          setSelectedSectionId(null)
+        }
+      }
       closeModuleMenu()
+    } else {
+      // Clear section selection when no module is selected
+      setSelectedSectionId(null)
     }
   }, [closeModuleMenu])
 
-  // Side drawer actions (for future use)
+  // Section selection
+  const setSelectedSection = useCallback((sectionId: string | null) => {
+    setSelectedSectionId(sectionId)
+  }, [])
+
+  // Side drawer actions
   const toggleSideDrawer = useCallback(() => {
     setSideDrawerOpen(prev => !prev)
   }, [])
@@ -80,6 +109,10 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
     // Module selection
     selectedModuleId,
     setSelectedModule,
+
+    // Section selection
+    selectedSectionId,
+    setSelectedSection,
 
     // Side drawer
     sideDrawerOpen,
