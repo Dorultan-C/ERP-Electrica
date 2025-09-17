@@ -7,45 +7,45 @@ This roadmap outlines the complete development phases for the ERP system, starti
 ## Phase 1: Web Frontend Prototype Foundation
 
 ### 1.1 Next.js Project Setup
-- [+] 1.1.1 Initialize Next.js project with TypeScript template
-- [+] 1.1.2 Configure TypeScript with strict mode enabled
-- [+] 1.1.3 Install and configure Tailwind CSS
-- [+] 1.1.4 Set up ESLint and Prettier
+- [x] 1.1.1 Initialize Next.js project with TypeScript template
+- [x] 1.1.2 Configure TypeScript with strict mode enabled
+- [x] 1.1.3 Install and configure Tailwind CSS
+- [x] 1.1.4 Set up ESLint and Prettier
 
 ### 1.2 Project Structure & TypeScript Types
-- [+] 1.2.1 Create folder structure: `components/`, `lib/`, `types/`, `data/`, `shared/`
-- [+] 1.2.2 Create `shared/` directory for future web/mobile component sharing
-- [+] 1.2.3 Create core TypeScript interfaces (User, Module, Permission, etc.)
-- [+] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
+- [x] 1.2.1 Create folder structure: `components/`, `lib/`, `types/`, `data/`, `shared/`
+- [x] 1.2.2 Create `shared/` directory for future web/mobile component sharing
+- [x] 1.2.3 Create core TypeScript interfaces (User, Module, Permission, etc.)
+- [x] 1.2.4 Create HR module types (Vacation, LOA, Attendance, Schedule)
 
 ### 1.3 Dummy Data Creation
-- [+] 1.3.1 Create comprehensive dummy data for users
-- [+] 1.3.2 Create dummy data for all HR module entities
-- [+] 1.3.3 Create sample permission sets and roles
-- [+] 1.3.4 Create module configuration data
+- [x] 1.3.1 Create comprehensive dummy data for users
+- [x] 1.3.2 Create dummy data for all HR module entities
+- [x] 1.3.3 Create sample permission sets and roles
+- [x] 1.3.4 Create module configuration data
 
 ---
 
 ## Phase 2: Web Core Layout & Navigation Prototype
 
 ### 2.1 App Shell & Header
-- [+] 2.1.1 Create main layout component with responsive design
-- [+] 2.1.2 Implement header with module navigation button
-- [+] 2.1.3 Create dashboard button component
-- [+] 2.1.4 Add notifications button with badge counter
-- [+] 2.1.5 Implement profile dropdown menu
+- [x] 2.1.1 Create main layout component with responsive design
+- [x] 2.1.2 Implement header with module navigation button
+- [x] 2.1.3 Create dashboard button component
+- [x] 2.1.4 Add notifications button with badge counter
+- [x] 2.1.5 Implement profile dropdown menu
 
 ### 2.2 Module Navigation System
-- [+] 2.2.1 Create full-screen module grid overlay
-- [+] 2.2.2 Implement module icons and navigation
-- [+] 2.2.3 Add smooth animations and transitions
-- [+] 2.2.4 Create close/open state management
+- [x] 2.2.1 Create full-screen module grid overlay
+- [x] 2.2.2 Implement module icons and navigation
+- [x] 2.2.3 Add smooth animations and transitions
+- [x] 2.2.4 Create close/open state management
 
 ### 2.3 Side Drawer Navigation
-- [+] 2.3.1 Implement collapsible side drawer
-- [+] 2.3.2 Create icon-only and expanded states
-- [+] 2.3.3 Add section navigation functionality
-- [+] 2.3.4 Ensure mobile-friendly interaction patterns
+- [x] 2.3.1 Implement collapsible side drawer
+- [x] 2.3.2 Create icon-only and expanded states
+- [x] 2.3.3 Add section navigation functionality
+- [x] 2.3.4 Ensure mobile-friendly interaction patterns
 
 ---
 
@@ -65,19 +65,42 @@ This roadmap outlines the complete development phases for the ERP system, starti
 
 ---
 
-## Phase 4: Web Dashboard Prototype
+## Phase 4: Web HR Module Prototype
 
-### 4.1 Dashboard Layout & Widgets
-- [ ] 4.1.1 Create responsive masonry grid layout
-- [ ] 4.1.2 Implement base widget component system
-- [ ] 4.1.3 Create sample widgets (stats, charts, quick actions)
-- [ ] 4.1.4 Add widget customization functionality
+### 4.1 HR Module Foundation
+- [ ] 4.1.1 Create HR module layout with section navigation
+- [ ] 4.1.2 Implement reusable list component with search/filter/sort
+- [ ] 4.1.3 Create right-side drawer for details
+- [ ] 4.1.4 Add responsive behavior for mobile screens
 
-### 4.2 Dashboard Personalization
-- [ ] 4.2.1 Implement drag-and-drop widget arrangement
-- [ ] 4.2.2 Add widget add/remove functionality
-- [ ] 4.2.3 Implement localStorage persistence for prototype
-- [ ] 4.2.4 Ensure touch-friendly interactions for future mobile
+### 4.2 Users Section
+- [ ] 4.2.1 Create users list with dummy data
+- [ ] 4.2.2 Implement user details drawer
+- [ ] 4.2.3 Add user creation and editing forms
+- [ ] 4.2.4 Create user management quick actions
+
+### 4.3 Vacations Section
+- [ ] 4.3.1 Implement multiple collapsible vacation lists
+- [ ] 4.3.2 Create vacation request forms
+- [ ] 4.3.3 Add vacation approval workflow simulation
+- [ ] 4.3.4 Implement public holidays management
+
+### 4.4 Leave of Absence Section
+- [ ] 4.4.1 Create LOA lists with different statuses
+- [ ] 4.4.2 Implement LOA request and approval forms
+- [ ] 4.4.3 Add LOA details and management
+
+### 4.5 Attendance Section
+- [ ] 4.5.1 Create timesheet views (day/month/year)
+- [ ] 4.5.2 Implement attendance tracking interface
+- [ ] 4.5.3 Add timesheet approval workflow
+- [ ] 4.5.4 Create action required notifications
+
+### 4.6 Schedules Section
+- [ ] 4.6.1 Implement schedule management interface
+- [ ] 4.6.2 Create schedule creation and editing forms
+- [ ] 4.6.3 Add employee schedule assignment
+- [ ] 4.6.4 Implement schedule templates
 
 ---
 
@@ -97,42 +120,19 @@ This roadmap outlines the complete development phases for the ERP system, starti
 
 ---
 
-## Phase 6: Web HR Module Prototype
+## Phase 6: Web Dashboard Prototype
 
-### 6.1 HR Module Foundation
-- [ ] 6.1.1 Create HR module layout with section navigation
-- [ ] 6.1.2 Implement reusable list component with search/filter/sort
-- [ ] 6.1.3 Create right-side drawer for details
-- [ ] 6.1.4 Add responsive behavior for mobile screens
+### 6.1 Dashboard Layout & Widgets
+- [ ] 6.1.1 Create responsive masonry grid layout
+- [ ] 6.1.2 Implement base widget component system
+- [ ] 6.1.3 Create sample widgets (stats, charts, quick actions)
+- [ ] 6.1.4 Add widget customization functionality
 
-### 6.2 Users Section
-- [ ] 6.2.1 Create users list with dummy data
-- [ ] 6.2.2 Implement user details drawer
-- [ ] 6.2.3 Add user creation and editing forms
-- [ ] 6.2.4 Create user management quick actions
-
-### 6.3 Vacations Section
-- [ ] 6.3.1 Implement multiple collapsible vacation lists
-- [ ] 6.3.2 Create vacation request forms
-- [ ] 6.3.3 Add vacation approval workflow simulation
-- [ ] 6.3.4 Implement public holidays management
-
-### 6.4 Leave of Absence Section
-- [ ] 6.4.1 Create LOA lists with different statuses
-- [ ] 6.4.2 Implement LOA request and approval forms
-- [ ] 6.4.3 Add LOA details and management
-
-### 6.5 Attendance Section
-- [ ] 6.5.1 Create timesheet views (day/month/year)
-- [ ] 6.5.2 Implement attendance tracking interface
-- [ ] 6.5.3 Add timesheet approval workflow
-- [ ] 6.5.4 Create action required notifications
-
-### 6.6 Schedules Section
-- [ ] 6.6.1 Implement schedule management interface
-- [ ] 6.6.2 Create schedule creation and editing forms
-- [ ] 6.6.3 Add employee schedule assignment
-- [ ] 6.6.4 Implement schedule templates
+### 6.2 Dashboard Personalization
+- [ ] 6.2.1 Implement drag-and-drop widget arrangement
+- [ ] 6.2.2 Add widget add/remove functionality
+- [ ] 6.2.3 Implement localStorage persistence for prototype
+- [ ] 6.2.4 Ensure touch-friendly interactions for future mobile
 
 ---
 

@@ -140,7 +140,7 @@ Use this marking system in `dev_notes/roadmap.md` to track task progress:
 - `- [ ]` - Not started
 - `- [*]` - Started/In progress
 - `- [-]` - Completed (ready for review)
-- `- [+]` - Reviewed and approved (closed)
+- `- [x]` - Reviewed and approved (closed)
 
 ## Project Status
 
