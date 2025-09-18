@@ -20,7 +20,7 @@ export const dummyNotifications: Notification[] = [
     title: 'Timesheet approved',
     message: 'Your timesheet for week 11 has been approved',
     type: 'general',
-    isRead: false,
+    isRead: true,
     createdAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
   },
   {
@@ -29,7 +29,7 @@ export const dummyNotifications: Notification[] = [
     title: 'System maintenance',
     message: 'Scheduled maintenance on Sunday at 2:00 AM',
     type: 'system_alert',
-    isRead: false,
+    isRead: true,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
   },
   {
@@ -38,7 +38,7 @@ export const dummyNotifications: Notification[] = [
     title: 'Test Not If I Cation',
     message: 'This is a test notification',
     type: 'general',
-    isRead: false,
+    isRead: true,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
   },
 ]
