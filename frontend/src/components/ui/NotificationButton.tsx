@@ -1,22 +1,21 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
-import { dummyNotifications } from '@/data/dummy'
 import { formatTimeAgo } from '@/shared/utils/ui'
 import { getNotificationTheme } from '@/lib/notificationThemes'
+import { useNotifications } from '@/shared/contexts'
 
 interface NotificationButtonProps {
-  count?: number
   onClick?: () => void
 }
 
-export default function NotificationButton({ count = 0, onClick }: NotificationButtonProps) {
+export default function NotificationButton({ onClick }: NotificationButtonProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const mobileScrollRef = useRef<HTMLDivElement>(null)
   const desktopScrollRef = useRef<HTMLDivElement>(null)
 
-  // Calculate unread notifications count
-  const unreadCount = dummyNotifications.filter(notification => !notification.isRead).length
+  // Get notification state and actions from context
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications()
 
   useEffect(() => {
     if (isDropdownOpen) {
@@ -36,8 +35,7 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
   }
 
   const handleMarkAllAsRead = () => {
-    // TODO: Implement mark all as read functionality
-    console.log('Mark all notifications as read')
+    markAllAsRead()
     setIsDropdownOpen(false)
   }
 
@@ -49,8 +47,7 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
 
   const handleDismissNotification = (notificationId: string, event: React.MouseEvent) => {
     event.stopPropagation()
-    // TODO: Implement individual notification dismissal
-    console.log('Dismiss notification:', notificationId)
+    markAsRead(notificationId)
   }
 
   return (
@@ -96,7 +93,7 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
                 Notifications
               </h3>
               <div className="flex items-center space-x-3">
-                {dummyNotifications.some(notification => !notification.isRead) && (
+                {notifications.some(notification => !notification.isRead) && (
                   <button
                     onClick={handleMarkAllAsRead}
                     className="text-base text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none flex items-center space-x-1 cursor-pointer"
@@ -128,9 +125,9 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
                 isDropdownOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
               }`}
             >
-              {dummyNotifications.length > 0 ? (
+              {notifications.length > 0 ? (
                 <div>
-                  {dummyNotifications.map((notification) => (
+                  {notifications.map((notification) => (
                     <div key={notification.id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 active:bg-gray-100 dark:active:bg-gray-700 cursor-pointer group touch-manipulation">
                       <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0 flex items-center h-5">
@@ -186,11 +183,11 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
           isDropdownOpen ? 'opacity-100 scale-100 pointer-events-auto' : 'opacity-0 scale-95 pointer-events-none'
         }`}>
             {/* Desktop Header */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 Notifications
               </h3>
-              {dummyNotifications.some(notification => !notification.isRead) && (
+              {notifications.some(notification => !notification.isRead) && (
                 <button
                   onClick={handleMarkAllAsRead}
                   className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 focus:outline-none flex items-center space-x-1 cursor-pointer"
@@ -207,9 +204,9 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
 
             {/* Desktop Notification List */}
             <div ref={desktopScrollRef} className="max-h-96 overflow-y-auto">
-              {dummyNotifications.length > 0 ? (
+              {notifications.length > 0 ? (
                 <>
-                  {dummyNotifications.map((notification) => (
+                  {notifications.map((notification) => (
                     <div key={notification.id} className="p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer group">
                       <div className="flex items-start space-x-3">
                         <div className="flex-shrink-0 flex items-center h-5">
@@ -257,7 +254,7 @@ export default function NotificationButton({ count = 0, onClick }: NotificationB
             </div>
 
             {/* Desktop Footer */}
-            {dummyNotifications.length > 3 && (
+            {notifications.length > 3 && (
               <div className="px-4 py-1 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleShowAll}

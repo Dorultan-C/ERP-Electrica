@@ -6,7 +6,7 @@ import DashboardButton from '../ui/DashboardButton'
 import NotificationButton from '../ui/NotificationButton'
 import ProfileDropdown from '../ui/ProfileDropdown'
 import ModuleGrid from '../ui/ModuleGrid'
-import { useNavigation } from '../../shared/contexts/NavigationContext'
+import { useNavigation } from '../../shared/contexts'
 import { useKeyboardShortcuts } from '../../shared/hooks/useKeyboardShortcuts'
 import { modules } from '@/data/modules'
 import { sections } from '@/data/sections'
@@ -63,12 +63,9 @@ export default function Header() {
 
             {/* Right side - Notifications and profile */}
             <div className="flex items-center space-x-4">
-              <NotificationButton count={3} />
+              <NotificationButton />
 
-              <ProfileDropdown
-                userName="John Doe"
-                userEmail="john.doe@company.com"
-              />
+              <ProfileDropdown />
             </div>
           </div>
 

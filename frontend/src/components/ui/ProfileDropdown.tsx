@@ -1,6 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useAuth } from '@/shared/contexts'
+import { getInitials, getAvatarColor, getAvatarTextColor } from '@/shared/utils/avatar'
 
 interface ProfileDropdownProps {
   userName?: string
@@ -12,14 +14,73 @@ interface ProfileDropdownProps {
 }
 
 export default function ProfileDropdown({
-  userName = "John Doe",
-  userEmail = "john.doe@company.com",
+  userName,
+  userEmail,
   profileImage,
   onPersonalDetails,
   onSettings,
   onLogout
 }: ProfileDropdownProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [imageError, setImageError] = useState(false)
+  const { user, logout, isLoading } = useAuth()
+
+  // Reset image error when user changes
+  useEffect(() => {
+    setImageError(false)
+  }, [user?.id])
+
+  // If still loading auth, don't render anything yet
+  if (isLoading) {
+    return (
+      <div className="w-9 h-9 bg-gray-200 dark:bg-gray-700 rounded-full animate-pulse"></div>
+    )
+  }
+
+  // Use auth user data if available, fallback to props
+  const displayName = userName || (user ? `${user.firstName} ${user.lastName}` : "Unknown User")
+  const displayEmail = userEmail || user?.email || ""
+  const displayImage = profileImage || user?.profileImage
+
+  // Don't show image if there's an error
+  const shouldShowImage = displayImage && !imageError
+
+  // Avatar utilities
+  const initials = getInitials(displayName)
+  const avatarColor = getAvatarColor(displayName)
+  const avatarTextColor = getAvatarTextColor(displayName)
+
+  // Avatar component for consistent rendering
+  const Avatar = ({ size }: { size: 'small' | 'medium' | 'large' }) => {
+    const sizeClasses = {
+      small: 'w-9 h-9',
+      medium: 'w-12 h-12',
+      large: 'w-16 h-16'
+    }
+
+    const textSizeClasses = {
+      small: 'text-xl font-medium',
+      medium: 'text-3xl font-medium',
+      large: 'text-4xl font-medium'
+    }
+
+    return (
+      <div className={`${sizeClasses[size]} rounded-full flex items-center justify-center overflow-hidden flex-shrink-0`}>
+        {shouldShowImage ? (
+          <img
+            src={displayImage}
+            alt={displayName}
+            className="w-full h-full object-cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div className={`w-full h-full ${avatarColor} flex items-center justify-center ${avatarTextColor} ${textSizeClasses[size]}`}>
+            {initials}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const handlePersonalDetails = () => {
     console.log('Navigate to Personal Details')
@@ -35,6 +96,7 @@ export default function ProfileDropdown({
 
   const handleLogout = () => {
     console.log('Logout user')
+    logout() // Use AuthContext logout
     onLogout?.()
     setIsDropdownOpen(false)
   }
@@ -44,23 +106,11 @@ export default function ProfileDropdown({
       {/* Profile Button */}
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors cursor-pointer"
+        className="w-9 rounded-md flex-shrink-0 text-gray-500 dark:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 transition-colors cursor-pointer"
         aria-label="Profile menu"
       >
         {/* Profile Image */}
-        <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden">
-          {profileImage ? (
-            <img
-              src={profileImage}
-              alt={userName}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          )}
-        </div>
+        <Avatar size="small" />
       </button>
 
       {/* Profile Dropdown */}
@@ -101,25 +151,13 @@ export default function ProfileDropdown({
               isDropdownOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
             }`}>
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt={userName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg className="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  )}
-                </div>
+                <Avatar size="large" />
                 <div className="flex-1 min-w-0">
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {userName}
+                    {displayName}
                   </p>
                   <p className="text-base text-gray-600 dark:text-gray-300">
-                    {userEmail}
+                    {displayEmail}
                   </p>
                 </div>
               </div>
@@ -174,25 +212,13 @@ export default function ProfileDropdown({
             {/* Desktop User Info Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
-                  {profileImage ? (
-                    <img
-                      src={profileImage}
-                      alt={userName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  )}
-                </div>
+                <Avatar size="medium" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                    {userName}
+                    {displayName}
                   </p>
                   <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-                    {userEmail}
+                    {displayEmail}
                   </p>
                 </div>
               </div>
