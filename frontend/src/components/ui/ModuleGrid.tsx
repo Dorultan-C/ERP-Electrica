@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useMemo } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { modules } from '@/data/modules'
 import { type Module } from '@/shared/types'
 import { usePermissions } from '@/shared/hooks'
@@ -14,6 +15,8 @@ interface ModuleGridProps {
 }
 
 export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedModuleId }: ModuleGridProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   const { hasModuleAccess } = usePermissions()
 
   // Filter modules based on user permissions
@@ -41,8 +44,16 @@ export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedMo
 
   const handleModuleClick = (module: Module) => {
     if (module.isActive) {
+      // Check if user is already on this module's route to prevent unnecessary navigation
+      const isAlreadyOnRoute = pathname.startsWith(module.route)
+
+      // Always update the navigation state for UI consistency
       onModuleSelect?.(module.id)
-      console.log(`Navigate to ${module.title}:`, module.route)
+
+      // Only navigate if not already on the route
+      if (!isAlreadyOnRoute) {
+        router.push(module.route)
+      }
     }
     onClose()
   }

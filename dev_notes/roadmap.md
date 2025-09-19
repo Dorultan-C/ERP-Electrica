@@ -69,8 +69,8 @@ This roadmap outlines the complete development phases for the ERP system, starti
 ## Phase 4: Web HR Module Prototype
 
 ### 4.1 HR Module Foundation
-- [ ] 4.1.1 Create HR module layout with section navigation
-- [ ] 4.1.2 Implement reusable list component with search/filter/sort
+- [x] 4.1.1 Create HR module layout with section navigation
+- [x] 4.1.2 Implement reusable list component with search/filter/sort
 - [ ] 4.1.3 Create right-side drawer for details
 - [ ] 4.1.4 Add responsive behavior for mobile screens
 

@@ -41,7 +41,6 @@ export default function NotificationButton({ onClick }: NotificationButtonProps)
 
   const handleShowAll = () => {
     // TODO: Navigate to full notifications page
-    console.log('Show all notifications')
     setIsDropdownOpen(false)
   }
 

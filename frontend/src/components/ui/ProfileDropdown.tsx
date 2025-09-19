@@ -83,19 +83,16 @@ export default function ProfileDropdown({
   }
 
   const handlePersonalDetails = () => {
-    console.log('Navigate to Personal Details')
     onPersonalDetails?.()
     setIsDropdownOpen(false)
   }
 
   const handleSettings = () => {
-    console.log('Navigate to Settings')
     onSettings?.()
     setIsDropdownOpen(false)
   }
 
   const handleLogout = () => {
-    console.log('Logout user')
     logout() // Use AuthContext logout
     onLogout?.()
     setIsDropdownOpen(false)

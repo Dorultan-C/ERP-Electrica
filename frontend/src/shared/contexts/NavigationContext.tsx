@@ -65,6 +65,7 @@ export function NavigationProvider({ children }: NavigationProviderProps) {
 
   // Module selection
   const setSelectedModule = useCallback((moduleId: string | null) => {
+    // Always update state for UI consistency
     setSelectedModuleId(moduleId)
 
     // Auto-select first section when module is selected

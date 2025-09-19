@@ -1,15 +1,10 @@
 import MainLayout from "../components/layout/MainLayout";
-import PermissionTest from "../components/testing/PermissionTest";
 
 export default function Home() {
   return (
     <MainLayout>
       <div className="max-w-7xl mx-auto">
-        {/* Permission System Testing */}
-        <PermissionTest />
-
-        {/* Original content (commented out for testing) */}
-        {/* <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
           Welcome to the ERP System
         </h1>
 
@@ -46,7 +41,7 @@ export default function Home() {
               </p>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </MainLayout>
   );

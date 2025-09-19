@@ -37,7 +37,6 @@ export function useKeyboardShortcuts() {
         const targetModule = modules[moduleIndex]
 
         if (targetModule && targetModule.isActive) {
-          console.log(`Navigate to ${targetModule.title}:`, targetModule.route)
           setSelectedModule(targetModule.id)
         }
         return

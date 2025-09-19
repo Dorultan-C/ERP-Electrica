@@ -1,12 +1,15 @@
 'use client'
 
 import React, { useMemo } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { useNavigation } from '../../shared/contexts/NavigationContext'
 import { usePermissions } from '@/shared/hooks'
 import { sections } from '@/data/sections'
 import { modules } from '@/data/modules'
 
 export default function SideDrawer() {
+  const router = useRouter()
+  const pathname = usePathname()
   const {
     selectedModuleId,
     selectedSectionId,
@@ -39,9 +42,16 @@ export default function SideDrawer() {
   }, [currentModule, selectedModuleId, hasSectionAccess])
 
   const handleSectionClick = (sectionId: string, route: string) => {
+    // Check if user is already on this section's route to prevent unnecessary navigation
+    const isAlreadyOnRoute = pathname === route
+
+    // Always update the navigation state for UI consistency
     setSelectedSection(sectionId)
-    console.log(`Navigate to section: ${sectionId}, route: ${route}`)
-    // TODO: Implement actual routing in future phases
+
+    // Only navigate if not already on the route
+    if (!isAlreadyOnRoute) {
+      router.push(route)
+    }
   }
 
   const toggleExpanded = () => {
@@ -125,7 +135,7 @@ export default function SideDrawer() {
                 ) : (
                   <div className="text-gray-400 dark:text-gray-500" title="No sections available">
                     <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                     </svg>
                   </div>
                 )

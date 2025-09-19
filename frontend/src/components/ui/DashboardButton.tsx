@@ -9,7 +9,6 @@ interface DashboardButtonProps {
 export default function DashboardButton({ onClick }: DashboardButtonProps) {
   const handleClick = () => {
     // TODO: Navigate to dashboard (will be implemented in later phases)
-    console.log('Navigate to Dashboard')
     onClick?.()
   }
 

@@ -34,7 +34,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // In Phase 9, this will check for JWT token in localStorage/sessionStorage
     const checkExistingSession = () => {
       // For now, auto-login the second dummy user for development
-      const currentUser = dummyUsers[1]
+      const currentUser = dummyUsers[3]
       if (currentUser) {
         setAuthState({
           user: currentUser,
