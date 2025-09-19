@@ -52,9 +52,9 @@ export default function SideDrawer() {
     <>
       {/* Desktop Side Drawer - Only show when module is selected */}
       {selectedModuleId && (
-        <aside className={`hidden lg:block bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${sideDrawerExpanded ? 'w-64' : 'w-14'}`}>
-          {/* Header */}
-          <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+        <aside className={`hidden lg:flex flex-col h-full bg-white dark:bg-gray-800 shadow-sm border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out ${sideDrawerExpanded ? 'w-64' : 'w-14'}`}>
+          {/* Fixed Header with expand/collapse button */}
+          <div className="flex-shrink-0 p-2 border-b border-gray-200 dark:border-gray-700">
             <button
               onClick={toggleExpanded}
               className={`w-full flex items-center p-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200 cursor-pointer touch-manipulation active:scale-[0.98] text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 ${
@@ -76,8 +76,8 @@ export default function SideDrawer() {
             </button>
           </div>
 
-        {/* Navigation */}
-        <nav className="p-2">
+        {/* Scrollable Navigation */}
+        <nav className="flex-1 p-2 overflow-y-auto">
           {currentSections.length > 0 ? (
             <div className="space-y-1">
               {currentSections.map((section) => {
