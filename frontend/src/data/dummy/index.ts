@@ -5,9 +5,11 @@
 // Export all dummy data
 export * from "./users";
 export * from "./hr";
-export * from "./permissions";
-export * from "./modules";
 export * from "./notifications";
+
+// Re-export non-dummy data
+export * from "../permissions";
+export * from "../modules";
 
 
 // Configuration for dummy data behavior

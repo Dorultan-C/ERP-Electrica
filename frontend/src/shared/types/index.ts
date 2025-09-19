@@ -3,6 +3,10 @@
 
 import React from 'react'
 
+// Import and export all permission-related types first
+import type { UserPermission } from './permissions'
+export * from './permissions'
+
 export interface User {
   id: string;
   username: string;
@@ -22,7 +26,7 @@ export interface User {
   employmentHistory: EmploymentHistoryEvent[];
   assignedScheduleId: string;
   roleIds: string[];
-  permissionIds: string[];
+  permissions: UserPermission[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -65,26 +69,8 @@ export interface Role {
   id: string;
   name: string;
   description?: string;
-  permissionIds: string[];
+  permissions: UserPermission[];
 }
-
-export interface Permission {
-  id: string;
-  name: string;
-  description?: string;
-  moduleId: string;
-  sectionId: string;
-  action: PermissionAction;
-  resource?: string;
-}
-
-export type PermissionAction =
-  | "create"
-  | "read"
-  | "update"
-  | "delete"
-  | "approve"
-  | "manage";
 
 export interface Module {
   id: string;
@@ -94,7 +80,6 @@ export interface Module {
   icon: React.ReactNode;
   route: string;
   sectionIds: string[];
-  requiredPermissionId: string;
   isActive: boolean;
   order: number;
   isComingSoon?: boolean;
@@ -107,7 +92,6 @@ export interface ModuleSection {
   description?: string;
   icon: React.ReactNode;
   route: string;
-  requiredPermissionId: string;
   isActive: boolean;
   order: number;
 }
@@ -149,7 +133,6 @@ export interface DashboardWidget {
   size: WidgetSize;
   position: WidgetPosition;
   config: Record<string, unknown>;
-  requiredPermissionId: string;
 }
 
 export interface WidgetSize {
@@ -202,30 +185,4 @@ export interface SearchAndFilterState {
   sort: SortOption | null;
   page: number;
   limit: number;
-}
-
-// Populated interfaces for when full objects are needed (UI display, etc.)
-export interface PopulatedUser extends Omit<User, "roleIds" | "permissionIds" | "assignedScheduleId"> {
-  roles: Role[];
-  permissions: Permission[];
-  assignedSchedule: Schedule;
-}
-
-export interface PopulatedRole extends Omit<Role, "permissionIds"> {
-  permissions: Permission[];
-}
-
-export interface PopulatedModule extends Omit<Module, "sectionIds" | "requiredPermissionId"> {
-  sections: ModuleSection[];
-  requiredPermission: Permission;
-}
-
-export interface PopulatedModuleSection extends Omit<ModuleSection, "requiredPermissionId"> {
-  requiredPermission: Permission;
-}
-
-export interface PopulatedDashboardWidget extends Omit<DashboardWidget, "moduleId" | "sectionId" | "requiredPermissionId"> {
-  module?: Module;
-  section?: ModuleSection;
-  requiredPermission: Permission;
 }

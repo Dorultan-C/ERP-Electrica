@@ -1,7 +1,8 @@
 'use client'
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useNavigation } from '../../shared/contexts/NavigationContext'
+import { usePermissions } from '@/shared/hooks'
 import { sections } from '@/data/sections'
 import { modules } from '@/data/modules'
 
@@ -16,12 +17,26 @@ export default function SideDrawer() {
     setSideDrawerExpanded
   } = useNavigation()
 
-  // Get current module and its sections
+  const { hasSectionAccess } = usePermissions()
+
+  // Get current module and its sections with permission filtering
   const currentModule = modules.find(m => m.id === selectedModuleId)
-  const currentSections = currentModule
-    ? sections.filter(s => currentModule.sectionIds.includes(s.id) && s.isActive)
-        .sort((a, b) => a.order - b.order)
-    : []
+  const currentSections = useMemo(() => {
+    if (!currentModule) return []
+
+    const moduleSections = sections.filter(s =>
+      currentModule.sectionIds.includes(s.id) && s.isActive
+    )
+
+    // Filter sections based on permissions
+    const accessibleSections = moduleSections.filter((section) => {
+      // Check if user has any permission with sectionId matching this section
+      // Note: Super users are automatically handled by hasSectionAccess
+      return hasSectionAccess(section.id)
+    })
+
+    return accessibleSections.sort((a, b) => a.order - b.order)
+  }, [currentModule, selectedModuleId, hasSectionAccess])
 
   const handleSectionClick = (sectionId: string, route: string) => {
     setSelectedSection(sectionId)

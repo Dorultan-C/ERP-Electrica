@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/shared/contexts'
-import { getInitials, getAvatarColor, getAvatarTextColor } from '@/shared/utils/avatar'
+import { getInitials, getAvatarColor, getAvatarTextColor } from '@/shared/utils'
 
 interface ProfileDropdownProps {
   userName?: string

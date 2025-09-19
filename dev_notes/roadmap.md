@@ -58,10 +58,11 @@ This roadmap outlines the complete development phases for the ERP system, starti
 - [x] 3.1.4 Implement context providers structure
 
 ### 3.2 Permission System Implementation
-- [ ] 3.2.1 Create usePermissions hook
-- [ ] 3.2.2 Implement permission-based component visibility
-- [ ] 3.2.3 Create permission wrapper components
-- [ ] 3.2.4 Test permission system with dummy data
+- [x] 3.2.1 Create permission check util function
+- [x] 3.2.2 Create usePermissions hook
+- [x] 3.2.3 Implement permission-based component visibility
+- [x] 3.2.4 Create permission wrapper components
+- [x] 3.2.5 Test permission system with dummy data
 
 ---
 

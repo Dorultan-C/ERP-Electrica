@@ -8,7 +8,6 @@ export const sections: ModuleSection[] = [
     title: 'Company',
     description: 'Company information and settings',
     route: '/settings/company',
-    requiredPermissionId: 'settings_company_read',
     isActive: true,
     order: 1,
     icon: (
@@ -23,7 +22,6 @@ export const sections: ModuleSection[] = [
     title: 'Application',
     description: 'Application settings and configuration',
     route: '/settings/app',
-    requiredPermissionId: 'settings_app_read',
     isActive: true,
     order: 2,
     icon: (
@@ -41,7 +39,6 @@ export const sections: ModuleSection[] = [
     title: 'Users',
     description: 'Manage users and employee information',
     route: '/hr/users',
-    requiredPermissionId: 'hr_users_read',
     isActive: true,
     order: 1,
     icon: (
@@ -56,7 +53,6 @@ export const sections: ModuleSection[] = [
     title: 'Vacations',
     description: 'Vacation requests and holidays',
     route: '/hr/vacations',
-    requiredPermissionId: 'hr_vacations_read',
     isActive: true,
     order: 2,
     icon: (
@@ -71,7 +67,6 @@ export const sections: ModuleSection[] = [
     title: 'Leave of Absence',
     description: 'Leave requests and approvals',
     route: '/hr/leave',
-    requiredPermissionId: 'hr_leave_read',
     isActive: true,
     order: 3,
     icon: (
@@ -86,7 +81,6 @@ export const sections: ModuleSection[] = [
     title: 'Attendance',
     description: 'Timesheets and attendance tracking',
     route: '/hr/attendance',
-    requiredPermissionId: 'hr_attendance_read',
     isActive: true,
     order: 4,
     icon: (
@@ -101,12 +95,27 @@ export const sections: ModuleSection[] = [
     title: 'Schedules',
     description: 'Work schedules and shifts',
     route: '/hr/schedules',
-    requiredPermissionId: 'hr_schedules_read',
     isActive: true,
     order: 5,
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    )
+  },
+
+  // Files sections
+  {
+    id: 'downloads',
+    name: 'downloads',
+    title: 'Downloads',
+    description: 'Download files and documents',
+    route: '/files/downloads',
+    isActive: true,
+    order: 1,
+    icon: (
+      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     )
   }

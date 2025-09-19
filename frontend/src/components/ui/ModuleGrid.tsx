@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { modules } from '@/data/modules'
 import { type Module } from '@/shared/types'
+import { usePermissions } from '@/shared/hooks'
 import ModuleCard from './ModuleCard'
 
 interface ModuleGridProps {
@@ -13,6 +14,17 @@ interface ModuleGridProps {
 }
 
 export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedModuleId }: ModuleGridProps) {
+  const { hasModuleAccess } = usePermissions()
+
+  // Filter modules based on user permissions
+  const accessibleModules = useMemo(() => {
+    return modules.filter((module) => {
+      // Check if user has any permission with moduleId matching this module
+      // Note: Super users are automatically handled by hasModuleAccess
+      return hasModuleAccess(module.id)
+    })
+  }, [hasModuleAccess])
+
   useEffect(() => {
     // Handle body scroll locking when module grid is open
     if (isOpen) {
@@ -80,7 +92,7 @@ export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedMo
       >
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-            {modules.map((module, index) => (
+            {accessibleModules.map((module, index) => (
               <ModuleCard
                 key={module.id}
                 module={module}
@@ -90,6 +102,20 @@ export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedMo
               />
             ))}
           </div>
+
+          {/* Show message if no accessible modules */}
+          {accessibleModules.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500 dark:text-gray-400">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <h3 className="text-lg font-medium mb-2">No Accessible Modules</h3>
+                <p className="text-sm">You don&apos;t have permission to access any modules.</p>
+                <p className="text-sm mt-1">Contact your administrator for access.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

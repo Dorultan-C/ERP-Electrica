@@ -171,7 +171,7 @@ export default function NotificationButton({ onClick }: NotificationButtonProps)
                     No new notifications
                   </p>
                   <p className="text-sm text-gray-400 dark:text-gray-500 text-center mt-1">
-                    You're all caught up!
+                    You&apos;re all caught up!
                   </p>
                 </div>
               )}

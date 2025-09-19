@@ -47,7 +47,12 @@ export const dummyUsers: User[] = [
     employmentHistory: [employmentHistoryEvents[0]!],
     assignedScheduleId: "schedule-001",
     roleIds: ["role-001", "role-002"],
-    permissionIds: ["perm-001", "perm-002", "perm-003"],
+    permissions: [
+      {
+        permissionId: "hr-users-manage",
+        actions: ["read", "create"]
+      }
+    ],
     createdAt: new Date("2023-01-15T09:00:00Z"),
     updatedAt: new Date("2024-01-15T14:30:00Z")
   },
@@ -70,7 +75,16 @@ export const dummyUsers: User[] = [
     employmentHistory: [employmentHistoryEvents[1]!],
     assignedScheduleId: "schedule-001",
     roleIds: ["role-002"],
-    permissionIds: ["perm-001", "perm-004"],
+    permissions: [
+      {
+        permissionId: "hr-users-manage",
+        actions: ["read", "create", "update"]
+      },
+      {
+        permissionId: "hr-attendance-manage-personal",
+        actions: ["create", "update", "read"]
+      }
+    ],
     createdAt: new Date("2022-03-20T10:15:00Z"),
     updatedAt: new Date("2024-01-20T16:45:00Z")
   },
@@ -93,77 +107,108 @@ export const dummyUsers: User[] = [
     employmentHistory: [employmentHistoryEvents[2]!],
     assignedScheduleId: "schedule-002",
     roleIds: ["role-003"],
-    permissionIds: ["perm-001"],
+    permissions: [
+      {
+        permissionId: "hr-users-manage",
+        actions: ["read"]
+      },
+      {
+        permissionId: "hr-attendance-manage-personal",
+        actions: ["create", "update", "read"]
+      }
+    ],
     createdAt: new Date("2024-01-10T08:00:00Z"),
     updatedAt: new Date("2024-01-22T11:20:00Z")
   },
+
+  // Test user with super-user permissions
   {
     id: "user-004",
-    username: "sarah.brown",
-    email: "sarah.brown@personal.com",
-    workEmail: "sarah.brown@company.com",
-    phoneNumber: "+1-555-0126",
-    workPhoneNumber: "+1-555-0103",
-    firstName: "Sarah",
-    lastName: "Brown",
-    address: "321 Elm St, Fourth City, ST 12348",
-    nationalID: "789123456",
-    insuranceNumber: "INS789123",
-    yearlyVacationDays: 28,
-    vacationDaysType: "natural",
-    status: "pending_start",
-    employmentHistory: [],
+    username: "super.admin",
+    firstName: "Super",
+    lastName: "Admin",
+    email: "super@company.com",
+    workEmail: "super.admin@company.com",
+    phoneNumber: "+1-555-0199",
+    workPhoneNumber: "+1-555-0199",
+    address: "789 Admin Blvd, Admin City, AC 90210, USA",
+    nationalID: "111111111",
+    insuranceNumber: "INS111111",
+    yearlyVacationDays: 30,
+    vacationDaysType: "labouring",
+    status: "active",
+    employmentHistory: [employmentHistoryEvents[0]!],
     assignedScheduleId: "schedule-001",
     roleIds: ["role-001"],
-    permissionIds: ["perm-001", "perm-002"],
-    createdAt: new Date("2024-02-01T12:00:00Z"),
-    updatedAt: new Date("2024-02-01T12:00:00Z")
+    permissions: [
+      {
+        permissionId: "super-user",
+        actions: ["true"]
+      },
+      {
+        permissionId: "hr-attendance-manage-personal",
+        actions: ["create", "update", "read"]
+      }
+    ],
+    createdAt: new Date("2020-01-01T09:00:00Z"),
+    updatedAt: new Date("2024-01-01T14:30:00Z")
   },
+
+  // Test user with download permissions only
   {
     id: "user-005",
-    username: "david.johnson",
-    email: "david.johnson@personal.com",
-    workEmail: "david.johnson@company.com",
-    phoneNumber: "+1-555-0127",
-    workPhoneNumber: "+1-555-0104",
-    firstName: "David",
-    lastName: "Johnson",
-    address: "654 Maple Dr, Fifth Town, ST 12349",
-    nationalID: "321654987",
-    insuranceNumber: "INS321654",
-    yearlyVacationDays: 22,
-    vacationDaysType: "labouring",
-    profileImage: "/images/profiles/david-johnson.jpg",
-    status: "suspended",
-    employmentHistory: [employmentHistoryEvents[0]!],
+    username: "download.user",
+    firstName: "Download",
+    lastName: "User",
+    email: "download@company.com",
+    workEmail: "download.user@company.com",
+    phoneNumber: "+1-555-0188",
+    workPhoneNumber: "+1-555-0188",
+    address: "456 Download St, File City, FC 12345, USA",
+    nationalID: "222222222",
+    insuranceNumber: "INS222222",
+    yearlyVacationDays: 25,
+    vacationDaysType: "natural",
+    status: "active",
+    employmentHistory: [employmentHistoryEvents[1]!],
     assignedScheduleId: "schedule-002",
     roleIds: ["role-003"],
-    permissionIds: ["perm-001"],
-    createdAt: new Date("2023-05-12T14:30:00Z"),
-    updatedAt: new Date("2024-01-30T09:15:00Z")
+    permissions: [
+      {
+        permissionId: "files-downloads-download",
+        actions: ["pdf", "docx"]
+      },
+      {
+        permissionId: "hr-attendance-manage-personal",
+        actions: ["create", "update", "read"]
+      }
+    ],
+    createdAt: new Date("2023-06-01T09:00:00Z"),
+    updatedAt: new Date("2024-01-15T14:30:00Z")
   },
+
+  // Test user with no permissions
   {
     id: "user-006",
-    username: "lisa.davis",
-    email: "lisa.davis@personal.com",
-    workEmail: "lisa.davis@company.com",
-    phoneNumber: "+1-555-0128",
-    workPhoneNumber: "+1-555-0105",
-    firstName: "Lisa",
-    lastName: "Davis",
-    address: "987 Birch Ln, Sixth City, ST 12350",
-    nationalID: "654987321",
-    insuranceNumber: "INS654987",
-    yearlyVacationDays: 26,
-    vacationDaysType: "natural",
-    profileImage: "/images/profiles/lisa-davis.jpg",
-    status: "terminated",
-    employmentHistory: [employmentHistoryEvents[0]!],
-    assignedScheduleId: "schedule-001",
-    roleIds: [],
-    permissionIds: [],
-    createdAt: new Date("2022-08-15T10:00:00Z"),
-    updatedAt: new Date("2023-12-20T17:00:00Z")
+    username: "no.access",
+    firstName: "No",
+    lastName: "Access",
+    email: "noaccess@company.com",
+    workEmail: "no.access@company.com",
+    phoneNumber: "+1-555-0177",
+    workPhoneNumber: "+1-555-0177",
+    address: "123 Limited St, Restricted City, RC 54321, USA",
+    nationalID: "333333333",
+    insuranceNumber: "INS333333",
+    yearlyVacationDays: 20,
+    vacationDaysType: "labouring",
+    status: "active",
+    employmentHistory: [employmentHistoryEvents[2]!],
+    assignedScheduleId: "schedule-002",
+    roleIds: ["role-003"],
+    permissions: [],
+    createdAt: new Date("2024-01-01T09:00:00Z"),
+    updatedAt: new Date("2024-01-15T14:30:00Z")
   }
 ];
 

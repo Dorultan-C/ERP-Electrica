@@ -20,6 +20,8 @@ import type {
 
 import type { Message } from "../../shared/types/common";
 
+import type { Schedule } from "../../shared/types/index";
+
 // Dummy Messages
 export const dummyMessages: Message[] = [
   {
@@ -212,6 +214,104 @@ export const dummyClosingDays: ClosingDay[] = [
     startDate: new Date("2024-08-15"),
     endDate: new Date("2024-08-16"),
     description: "Company retreat days"
+  }
+];
+
+// Dummy Schedules (referenced by modules)
+export const dummySchedules: Schedule[] = [
+  {
+    id: "schedule-001",
+    name: "Standard Office Hours",
+    description: "Monday to Friday, 9 AM to 5 PM",
+    weekSchedule: [
+      {
+        id: "sd-001",
+        dayOfWeek: 1, // Monday
+        startTime: "09:00",
+        endTime: "17:00",
+        labouringMinutes: 480, // 8 hours
+        allowedBrakeMinutes: 60  // 1 hour lunch
+      },
+      {
+        id: "sd-002",
+        dayOfWeek: 2, // Tuesday
+        startTime: "09:00",
+        endTime: "17:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-003",
+        dayOfWeek: 3, // Wednesday
+        startTime: "09:00",
+        endTime: "17:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-004",
+        dayOfWeek: 4, // Thursday
+        startTime: "09:00",
+        endTime: "17:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-005",
+        dayOfWeek: 5, // Friday
+        startTime: "09:00",
+        endTime: "17:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      }
+    ]
+  },
+  {
+    id: "schedule-002",
+    name: "Flexible Hours",
+    description: "Monday to Friday, 8 AM to 4 PM",
+    weekSchedule: [
+      {
+        id: "sd-006",
+        dayOfWeek: 1, // Monday
+        startTime: "08:00",
+        endTime: "16:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-007",
+        dayOfWeek: 2, // Tuesday
+        startTime: "08:00",
+        endTime: "16:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-008",
+        dayOfWeek: 3, // Wednesday
+        startTime: "08:00",
+        endTime: "16:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-009",
+        dayOfWeek: 4, // Thursday
+        startTime: "08:00",
+        endTime: "16:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      },
+      {
+        id: "sd-010",
+        dayOfWeek: 5, // Friday
+        startTime: "08:00",
+        endTime: "16:00",
+        labouringMinutes: 480,
+        allowedBrakeMinutes: 60
+      }
+    ]
   }
 ];
 
