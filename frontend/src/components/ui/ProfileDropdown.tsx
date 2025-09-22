@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useAuth } from '@/shared/contexts'
-import { getInitials, getAvatarColor, getAvatarTextColor } from '@/shared/utils'
+import { Avatar } from './Avatar'
 
 interface ProfileDropdownProps {
   userName?: string
@@ -22,13 +22,7 @@ export default function ProfileDropdown({
   onLogout
 }: ProfileDropdownProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [imageError, setImageError] = useState(false)
   const { user, logout, isLoading } = useAuth()
-
-  // Reset image error when user changes
-  useEffect(() => {
-    setImageError(false)
-  }, [user?.id])
 
   // If still loading auth, don't render anything yet
   if (isLoading) {
@@ -38,49 +32,9 @@ export default function ProfileDropdown({
   }
 
   // Use auth user data if available, fallback to props
-  const displayName = userName || (user ? `${user.firstName} ${user.lastName}` : "Unknown User")
+  const displayName = userName || (user ? `${user.firstName} ${user.lastName}` : "?")
   const displayEmail = userEmail || user?.email || ""
   const displayImage = profileImage || user?.profileImage
-
-  // Don't show image if there's an error
-  const shouldShowImage = displayImage && !imageError
-
-  // Avatar utilities
-  const initials = getInitials(displayName)
-  const avatarColor = getAvatarColor(displayName)
-  const avatarTextColor = getAvatarTextColor(displayName)
-
-  // Avatar component for consistent rendering
-  const Avatar = ({ size }: { size: 'small' | 'medium' | 'large' }) => {
-    const sizeClasses = {
-      small: 'w-9 h-9',
-      medium: 'w-12 h-12',
-      large: 'w-16 h-16'
-    }
-
-    const textSizeClasses = {
-      small: 'text-xl font-medium',
-      medium: 'text-3xl font-medium',
-      large: 'text-4xl font-medium'
-    }
-
-    return (
-      <div className={`${sizeClasses[size]} rounded-full flex items-center justify-center overflow-hidden flex-shrink-0`}>
-        {shouldShowImage ? (
-          <img
-            src={displayImage}
-            alt={displayName}
-            className="w-full h-full object-cover"
-            onError={() => setImageError(true)}
-          />
-        ) : (
-          <div className={`w-full h-full ${avatarColor} flex items-center justify-center ${avatarTextColor} ${textSizeClasses[size]}`}>
-            {initials}
-          </div>
-        )}
-      </div>
-    )
-  }
 
   const handlePersonalDetails = () => {
     onPersonalDetails?.()
@@ -107,7 +61,7 @@ export default function ProfileDropdown({
         aria-label="Profile menu"
       >
         {/* Profile Image */}
-        <Avatar size="small" />
+        <Avatar src={displayImage} name={displayName} size="small" />
       </button>
 
       {/* Profile Dropdown */}
@@ -148,7 +102,7 @@ export default function ProfileDropdown({
               isDropdownOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
             }`}>
               <div className="flex items-center space-x-4">
-                <Avatar size="large" />
+                <Avatar src={displayImage} name={displayName} size="large" />
                 <div className="flex-1 min-w-0">
                   <p className="text-lg font-semibold text-gray-900 dark:text-white">
                     {displayName}
@@ -209,7 +163,7 @@ export default function ProfileDropdown({
             {/* Desktop User Info Header */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3">
-                <Avatar size="medium" />
+                <Avatar src={displayImage} name={displayName} size="medium" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {displayName}

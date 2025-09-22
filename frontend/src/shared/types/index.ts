@@ -11,12 +11,12 @@ export interface User {
   id: string;
   username: string;
   email: string;
-  workEmail: string;
+  workEmail?: string;
   phoneNumber: string;
-  workPhoneNumber: string;
+  workPhoneNumber?: string;
   firstName: string;
   lastName: string;
-  address: string;
+  address?: string;
   nationalID: string;
   insuranceNumber: string;
   yearlyVacationDays: number;
@@ -25,10 +25,9 @@ export interface User {
   status: UserStatus;
   employmentHistory: EmploymentHistoryEvent[];
   assignedScheduleId: string;
-  roleIds: string[];
+  roleIds?: string[];
   permissions: UserPermission[];
   createdAt: Date;
-  updatedAt: Date;
 }
 
 export interface Schedule {

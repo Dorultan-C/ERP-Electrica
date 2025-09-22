@@ -24,24 +24,44 @@ export const permissions: Permission[] = [
     actions: ["create", "read", "update", "delete"]
   },
 
-  // HR - Attendance: Manage personal attendance
+  // HR - Attendance: Manage own's attendance
   {
-    id: 'hr-attendance-manage-personal',
-    name: 'Attendance Management',
-    description: 'Permission to create/view/update/delete personal attendance',
+    id: 'hr-attendance-manage-owns',
+    name: "Attendance Management: Own's",
+    description: "Permission to create/view/update/delete own's attendance",
     moduleId: 'hr',
     sectionId: 'attendance',
     actions: ["create", "read", "update", "delete"]
   },
 
-  // HR - Attendance: Manage others attendance
+  // HR - Attendance: Manage other's attendance
   {
     id: 'hr-attendance-manage-others',
-    name: 'Attendance Management',
-    description: 'Permission to create/view/update/delete others attendance',
+    name: 'Attendance Management: Others',
+    description: "Permission to create/view/update/delete other's attendance",
     moduleId: 'hr',
     sectionId: 'attendance',
     actions: ["create", "read", "update", "delete"]
+  },
+
+  // HR - Users: View own's permissions
+  {
+    id: 'hr-users-permissions-owns',
+    name: "Permissions Management: Own's",
+    description: "Permission to view/request own's permissions",
+    moduleId: 'hr',
+    sectionId: 'users',
+    actions: ["read_own", "read_all", "request"]
+  },
+
+  // HR - Users: Manage other's permissions
+  {
+    id: 'hr-users-permissions-others',
+    name: 'Permissions Management: Others',
+    description: "Permission to assign/revoke other's permissions",
+    moduleId: 'hr',
+    sectionId: 'users',
+    actions: ["assign_all", "assign_own", "revoke_all", "revoke_own", "read_all", "read_own"]
   },
 
   // Download permission (for testing)

@@ -6,6 +6,8 @@ export type { AuthState, AuthContextType, AuthProviderProps } from './AuthContex
 
 export { NavigationProvider, useNavigation } from './NavigationContext'
 
+export { DrawerProvider, useDrawer } from './DrawerContext'
+
 export { NotificationProvider, useNotifications } from './NotificationContext'
 export type { NotificationState, NotificationContextType, NotificationProviderProps } from './NotificationContext'
 

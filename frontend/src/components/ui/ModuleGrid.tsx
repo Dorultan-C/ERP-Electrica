@@ -97,9 +97,10 @@ export default function ModuleGrid({ isOpen, onClose, onModuleSelect, selectedMo
 
       {/* Module Grid Content */}
       <div
-        className={`flex-1 p-8 overflow-y-auto transition-all duration-500 delay-100 ${
+        className={`flex-1 p-8 overflow-y-auto h-full transition-all duration-500 delay-100 ${
           isOpen ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
         }`}
+        style={{ height: 'calc(100vh - 4rem)' }}
       >
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">

@@ -71,31 +71,31 @@ This roadmap outlines the complete development phases for the ERP system, starti
 ### 4.1 HR Module Foundation
 - [x] 4.1.1 Create HR module layout with section navigation
 - [x] 4.1.2 Implement reusable list component with search/filter/sort
-- [ ] 4.1.3 Create right-side drawer for details
-- [ ] 4.1.4 Add responsive behavior for mobile screens
+- [x] 4.1.3 Create right-side drawer for details
+- [x] 4.1.4 Add responsive behavior for mobile screens
 
-### 4.2 Users Section
-- [ ] 4.2.1 Create users list with dummy data
-- [ ] 4.2.2 Implement user details drawer
-- [ ] 4.2.3 Add user creation and editing forms
-- [ ] 4.2.4 Create user management quick actions
+### 4.2 Attendance Section
+- [ ] 4.2.1 Create timesheet views (day/month/year)
+- [ ] 4.2.2 Implement attendance tracking interface
+- [ ] 4.2.3 Add timesheet approval workflow
+- [ ] 4.2.4 Create action required notifications
 
-### 4.3 Vacations Section
-- [ ] 4.3.1 Implement multiple collapsible vacation lists
-- [ ] 4.3.2 Create vacation request forms
-- [ ] 4.3.3 Add vacation approval workflow simulation
-- [ ] 4.3.4 Implement public holidays management
+### 4.3 Users Section
+- [ ] 4.3.1 Create users list with dummy data
+- [ ] 4.3.2 Implement user details drawer
+- [ ] 4.3.3 Add user creation and editing forms
+- [ ] 4.3.4 Create user management quick actions
 
-### 4.4 Leave of Absence Section
-- [ ] 4.4.1 Create LOA lists with different statuses
-- [ ] 4.4.2 Implement LOA request and approval forms
-- [ ] 4.4.3 Add LOA details and management
+### 4.4 Vacations Section
+- [ ] 4.4.1 Implement multiple collapsible vacation lists
+- [ ] 4.4.2 Create vacation request forms
+- [ ] 4.4.3 Add vacation approval workflow simulation
+- [ ] 4.4.4 Implement public holidays management
 
-### 4.5 Attendance Section
-- [ ] 4.5.1 Create timesheet views (day/month/year)
-- [ ] 4.5.2 Implement attendance tracking interface
-- [ ] 4.5.3 Add timesheet approval workflow
-- [ ] 4.5.4 Create action required notifications
+### 4.5 Leave of Absence Section
+- [ ] 4.5.1 Create LOA lists with different statuses
+- [ ] 4.5.2 Implement LOA request and approval forms
+- [ ] 4.5.3 Add LOA details and management
 
 ### 4.6 Schedules Section
 - [ ] 4.6.1 Implement schedule management interface
