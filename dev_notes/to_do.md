@@ -8,3 +8,4 @@
 - [ ] users drawer permissions
 - [ ] schedules drawer how to display data
 - [ ] users drawer how to display data
+- [ ] correct atendance page

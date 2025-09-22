@@ -366,7 +366,7 @@ export const dummyTimesheetListItems: TimesheetListItem[] = [
     id: "ts-001",
     userId: "user-001",
     employeeName: "John Doe",
-    date: new Date("2024-01-22"),
+    date: new Date("2024-02-22"),
     startTime: new Date("2024-01-22T09:00:00Z"),
     endTime: new Date("2024-01-22T17:30:00Z"),
     totalMinutes: 435,
@@ -380,6 +380,17 @@ export const dummyTimesheetListItems: TimesheetListItem[] = [
     startTime: new Date("2024-01-22T08:30:00Z"),
     endTime: new Date("2024-01-22T18:00:00Z"),
     totalMinutes: 510,
+    status: "requires_modification"
+  }
+  ,
+  {
+    id: "ts-003",
+    userId: "user-002",
+    employeeName: "Jane Smith",
+    date: new Date("2025-08-22"),
+    startTime: new Date("2025-09-22T09:00:00Z"),
+    endTime: new Date("2025-09-22T18:00:00Z"),
+    totalMinutes: 480,
     status: "pending"
   }
 ];

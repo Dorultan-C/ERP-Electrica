@@ -75,9 +75,8 @@ This roadmap outlines the complete development phases for the ERP system, starti
 - [x] 4.1.4 Add responsive behavior for mobile screens
 
 ### 4.2 Attendance Section
-- [ ] 4.2.1 Create timesheet views (day/month/year)
-- [ ] 4.2.2 Implement attendance tracking interface
-- [ ] 4.2.3 Add timesheet approval workflow
+- [x] 4.2.1 Create timesheet views (day/month/year)
+- [x] 4.2.2 Implement attendance tracking interface
 - [ ] 4.2.4 Create action required notifications
 
 ### 4.3 Users Section
