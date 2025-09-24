@@ -5,7 +5,9 @@
 - [ ] action button if absent/pending/public holiday absent
 - [ ] owns list
 - [ ] DB view
-
+- [ ] update use 24h clock
+- [ ] use schedules in AttendanceTracker
+- [ ] revise attendance tracker wisibility
 
 #### - Users
 - [ ] list how to display data
