@@ -4,33 +4,36 @@ import React from 'react'
 import { RightDrawer } from '@/components/ui/RightDrawer'
 import { Avatar } from '@/components/ui/Avatar'
 import { useDrawer } from '@/shared/contexts/DrawerContext'
-import { dummyTimesheetListItems, dummyTimesheets } from '@/data/dummy/hr'
+import { getTimesheetsWithEmployeeNames } from '@/data/dummy/hr'
 import { dummyUsers } from '@/data/dummy/users'
-import type { TimesheetListItem } from '@/shared/types/hr'
+import type { Timesheet } from '@/shared/types/hr'
 
 interface TimesheetDetailsDrawerProps {
-  onEdit?: (timesheet: TimesheetListItem) => void
+  onEdit?: (timesheet: Timesheet) => void
 }
 
 export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) {
-  const { isOpen, isClosing, isExpanded, selectedId, closeDrawer, toggleExpand } = useDrawer()
+  const { isOpen, isClosing, isExpanded, selectedId, selectedType, closeDrawer, toggleExpand } = useDrawer()
 
-  // Find the selected timesheet from list items first
-  const selectedTimesheetListItem = selectedId ? dummyTimesheetListItems.find(timesheet => timesheet.id === selectedId) : null
+  // Only show this drawer for timesheet-type selections
+  if (selectedType !== 'timesheets') {
+    return null
+  }
 
-  // Find the full timesheet data for additional details
-  const selectedTimesheet = selectedId ? dummyTimesheets.find(timesheet => timesheet.id === selectedId) : null
+  // Find the selected timesheet with employee name populated
+  const timesheetsWithNames = getTimesheetsWithEmployeeNames()
+  const selectedTimesheet = selectedId ? timesheetsWithNames.find(timesheet => timesheet.id === selectedId) : null
 
   // Find the user associated with this timesheet
-  const selectedUser = selectedTimesheetListItem ? dummyUsers.find(user => user.id === selectedTimesheetListItem.userId) : null
+  const selectedUser = selectedTimesheet ? dummyUsers.find(user => user.id === selectedTimesheet.userId) : null
 
   const handleEdit = () => {
-    if (selectedTimesheetListItem && onEdit) {
-      onEdit(selectedTimesheetListItem)
+    if (selectedTimesheet && onEdit) {
+      onEdit(selectedTimesheet)
     }
   }
 
-  if (!selectedTimesheetListItem) {
+  if (!selectedTimesheet) {
     return null
   }
 
@@ -53,7 +56,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
 
   // Calculate worked hours vs scheduled hours
   const scheduledHours = 8 // Default 8 hours, could be from user's schedule
-  const workedHours = selectedTimesheetListItem.totalMinutes / 60
+  const workedHours = selectedTimesheet.totalMinutes / 60
   const overtime = Math.max(0, workedHours - scheduledHours)
 
   return (
@@ -61,7 +64,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
       isOpen={isOpen}
       isClosing={isClosing}
       onClose={closeDrawer}
-      title={`${selectedTimesheetListItem.employeeName} - ${new Date(selectedTimesheetListItem.date).toLocaleDateString()}`}
+      title={`${(selectedTimesheet as any).employeeName} - ${new Date(selectedTimesheet.date).toLocaleDateString()}`}
       isExpanded={isExpanded}
       onToggleExpand={toggleExpand}
       {...(onEdit && { onEdit: handleEdit })}
@@ -72,16 +75,16 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
         <div className="flex flex-col sm:flex-row items-center sm:space-x-4 space-y-4 sm:space-y-0 pb-6 border-b border-gray-200 dark:border-gray-700">
           <Avatar
             src={selectedUser?.profileImage}
-            name={selectedTimesheetListItem.employeeName}
+            name={(selectedTimesheet as any).employeeName}
             size="large"
             className="flex-shrink-0"
           />
           <div className="flex-1 min-w-0 text-center sm:text-left">
             <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {selectedTimesheetListItem.employeeName}
+              {(selectedTimesheet as any).employeeName}
             </h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {new Date(selectedTimesheetListItem.date).toLocaleDateString('en-US', {
+              {new Date(selectedTimesheet.date).toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -90,15 +93,18 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
             </p>
             <div className="mt-1">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                selectedTimesheetListItem.status === 'approved'
+                selectedTimesheet.status === 'approved'
                   ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                  : selectedTimesheetListItem.status === 'pending'
+                  : selectedTimesheet.status === 'pending'
                   ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                  : selectedTimesheetListItem.status === 'rejected'
-                  ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                  : 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
               }`}>
-                {selectedTimesheetListItem.status === 'requires_modification' ? 'Needs Changes' : selectedTimesheetListItem.status}
+                {
+                  selectedTimesheet.status === 'requires_modification' ? 'Requires Modification' :
+                  selectedTimesheet.status === 'pending' ? 'Pending' :
+                  selectedTimesheet.status === 'approved' ? 'Approved' :
+                  selectedTimesheet.status
+                }
               </span>
             </div>
           </div>
@@ -112,7 +118,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
             <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {formatDuration(selectedTimesheetListItem.totalMinutes)}
+                  {formatDuration(selectedTimesheet.totalMinutes)}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400">Total Time</div>
               </div>
@@ -139,7 +145,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
                 Start Time
               </label>
               <p className="text-sm text-gray-900 dark:text-white">
-                {formatTime(selectedTimesheetListItem.startTime)}
+                {formatTime(selectedTimesheet.startTime)}
               </p>
             </div>
 
@@ -148,7 +154,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
                 End Time
               </label>
               <p className="text-sm text-gray-900 dark:text-white">
-                {formatTime(selectedTimesheetListItem.endTime)}
+                {formatTime(selectedTimesheet.endTime)}
               </p>
             </div>
           </div>
@@ -251,7 +257,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
                 Timesheet ID
               </label>
               <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                {selectedTimesheetListItem.id}
+                {selectedTimesheet.id}
               </p>
             </div>
 
@@ -260,7 +266,7 @@ export function TimesheetDetailsDrawer({ onEdit }: TimesheetDetailsDrawerProps) 
                 Employee ID
               </label>
               <p className="text-sm text-gray-500 dark:text-gray-400 font-mono">
-                {selectedTimesheetListItem.userId}
+                {selectedTimesheet.userId}
               </p>
             </div>
           </div>

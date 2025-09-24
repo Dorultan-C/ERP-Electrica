@@ -7,6 +7,7 @@ import type { DataListColumn } from '@/components/ui/datalist'
 import { UserDetailsDrawer } from '../drawers/UserDetailsDrawer'
 import { dummyUsers } from '@/data/dummy/users'
 import type { User } from '@/shared/types'
+import { getUserStatusColorMap } from '@/shared/utils'
 
 export default function HRUsersSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation()
@@ -86,11 +87,7 @@ export default function HRUsersSection() {
       cell: ({ value }) => (
         <Cell.Badge
           value={value}
-          colorMap={{
-            active: 'green',
-            probation: 'yellow',
-            inactive: 'red'
-          }}
+          colorMap={getUserStatusColorMap()}
         />
       )
     },

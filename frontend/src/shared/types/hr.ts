@@ -103,7 +103,6 @@ export interface Break {
 export type TimesheetStatus =
   | "pending"
   | "approved"
-  | "rejected"
   | "requires_modification";
 
 
@@ -133,16 +132,6 @@ export interface LOAListItem {
   requestedAt: Date;
 }
 
-export interface TimesheetListItem {
-  id: string;
-  userId: string;
-  employeeName: string;
-  date: Date;
-  startTime?: Date;
-  endTime?: Date;
-  totalMinutes: number;
-  status: TimesheetStatus;
-}
 
 export interface ScheduleListItem {
   id: string;

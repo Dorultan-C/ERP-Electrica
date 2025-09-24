@@ -85,6 +85,18 @@ export function DataList<T extends { id: string }>({
             onRowClick={onRowClick}
           />
         </table>
+
+        {/* Empty State */}
+        {processedData.length === 0 && (
+          <div className="text-center py-3">
+            <div className="text-gray-500 dark:text-gray-400">
+              <p className="text-base font-medium text-gray-900 dark:text-white mb-1">No data found</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {hasActiveFilters || searchQuery ? 'Try adjusting your search or filters' : 'There are no items to display'}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Pagination */}

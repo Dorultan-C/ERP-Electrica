@@ -6,13 +6,19 @@ import { Avatar } from '@/components/ui/Avatar'
 import { useDrawer } from '@/shared/contexts/DrawerContext'
 import { dummyUsers } from '@/data/dummy/users'
 import type { User } from '@/shared/types'
+import { getUserStatusBgColor, getUserStatusTextColor, getUserStatusLabel } from '@/shared/utils'
 
 interface UserDetailsDrawerProps {
   onEdit?: (user: User) => void
 }
 
 export function UserDetailsDrawer({ onEdit }: UserDetailsDrawerProps) {
-  const { isOpen, isClosing, isExpanded, selectedId, closeDrawer, toggleExpand } = useDrawer()
+  const { isOpen, isClosing, isExpanded, selectedId, selectedType, closeDrawer, toggleExpand } = useDrawer()
+
+  // Only show this drawer for user-type selections
+  if (selectedType !== 'users') {
+    return null
+  }
 
   // Find the selected user
   const selectedUser = selectedId ? dummyUsers.find(user => user.id === selectedId) : null
@@ -57,14 +63,8 @@ export function UserDetailsDrawer({ onEdit }: UserDetailsDrawerProps) {
               @{selectedUser.username}
             </p>
             <div className="mt-1">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                selectedUser.status === 'active'
-                  ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                  : selectedUser.status === 'probation'
-                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                  : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-              }`}>
-                {selectedUser.status}
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUserStatusTextColor(selectedUser.status)} ${getUserStatusBgColor(selectedUser.status)}`}>
+                {getUserStatusLabel(selectedUser.status)}
               </span>
             </div>
           </div>
@@ -201,14 +201,8 @@ export function UserDetailsDrawer({ onEdit }: UserDetailsDrawerProps) {
               {selectedUser.employmentHistory.map((event, _index) => (
                 <div key={event.id} className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      event.status === 'active'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        : event.status === 'probation'
-                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                        : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                    }`}>
-                      {event.status}
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getUserStatusTextColor(event.status)} ${getUserStatusBgColor(event.status)}`}>
+                      {getUserStatusLabel(event.status)}
                     </span>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {new Date(event.date).toLocaleDateString()}

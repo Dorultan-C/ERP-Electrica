@@ -81,8 +81,12 @@ export const dummyUsers: User[] = [
       },
       {
         permissionId: "hr-attendance-manage-owns",
-        actions: ["create", "update", "read"]
-      }
+        actions: ["delete"]
+      },
+      {
+        permissionId: "hr-attendance-clock",
+        actions: ["true"]
+      },
     ],
     createdAt: new Date("2022-03-20T10:15:00Z")
   },

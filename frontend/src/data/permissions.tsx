@@ -24,6 +24,16 @@ export const permissions: Permission[] = [
     actions: ["create", "read", "update", "delete"]
   },
 
+  // HR - Attendance: Timesheet clock
+  {
+    id: 'hr-attendance-clock',
+    name: "Attendance clock in/out",
+    description: "Permission to clock in/out",
+    moduleId: 'hr',
+    sectionId: 'attendance',
+    actions: ["true"]
+  },
+
   // HR - Attendance: Manage own's attendance
   {
     id: 'hr-attendance-manage-owns',

@@ -1,11 +1,23 @@
 # TO DO
+### First priority
+#### - Attendance
+- [ ] pagination on custom date range > ?
+- [ ] action button if absent/pending/public holiday absent
+- [ ] owns list
+- [ ] DB view
 
-- [ ] schedules list permissions
+
+#### - Users
+- [ ] list how to display data
+- [ ] drawer how to display data
+
+### Second priority
+#### - Schedules
+- [ ] list how to display data
+- [ ] drawer how to display data
+
+### Last priority
 - [ ] users list permissions
-- [ ] schedules list how to display data
-- [ ] users list how to display data
-- [ ] schedules drawer permissions
 - [ ] users drawer permissions
-- [ ] schedules drawer how to display data
-- [ ] users drawer how to display data
-- [ ] correct atendance page
+- [ ] schedules list permissions
+- [ ] schedules drawer permissions

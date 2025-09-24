@@ -85,7 +85,7 @@ export function RightDrawer({
         } ${
           isExpanded
             ? 'w-full'
-            : 'w-full sm:w-96 md:w-[32rem] lg:w-[40rem]'
+            : 'w-full sm:w-4/5 md:w-3/5 lg:w-1/2 xl:w-2/5 max-w-[50rem]'
         } ${className}`}
       >
         {/* Header */}

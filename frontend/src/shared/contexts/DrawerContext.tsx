@@ -57,6 +57,7 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
   useEffect(() => {
     const urlParts = pathname.split('/')
     const detailId = searchParams.get('detail')
+    const detailType = searchParams.get('type')
     const expanded = searchParams.get('expanded') === 'true'
 
     if (detailId) {
@@ -65,23 +66,25 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
         isClosing: false,
         isExpanded: expanded,
         selectedId: detailId,
-        selectedType: urlParts[2] || 'unknown' // e.g., 'users' from '/hr/users'
+        selectedType: detailType || urlParts[2] || 'unknown' // Prefer URL param, fallback to path segment
       })
+    } else {
+      // If no detail ID, close the drawer
+      setState(prev => ({
+        ...prev,
+        isOpen: false,
+        isClosing: false,
+        selectedId: null,
+        selectedType: null
+      }))
     }
   }, [pathname, searchParams])
 
   const openDrawer = useCallback((id: string, type: string) => {
-    setState(prev => ({
-      ...prev,
-      isOpen: true,
-      isClosing: false,
-      selectedId: id,
-      selectedType: type
-    }))
-
     // Update URL with query parameters instead of path segments
     const params = new URLSearchParams(searchParams.toString())
     params.set('detail', id)
+    params.set('type', type)
 
     if (state.isExpanded) {
       params.set('expanded', 'true')
@@ -91,6 +94,8 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
     const finalUrl = `${pathname}?${queryString}`
 
     router.push(finalUrl, { scroll: false })
+
+    // Note: State will be set by the useEffect when URL changes
   }, [pathname, searchParams, router, state.isExpanded])
 
   const closeDrawer = useCallback(() => {
@@ -110,9 +115,10 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
         selectedType: null
       }))
 
-      // Remove detail and expanded parameters from URL
+      // Remove detail, type and expanded parameters from URL
       const params = new URLSearchParams(searchParams.toString())
       params.delete('detail')
+      params.delete('type')
       params.delete('expanded')
 
       const queryString = params.toString()

@@ -13,7 +13,6 @@ import type {
   ClosingDay,
   VacationListItem,
   LOAListItem,
-  TimesheetListItem,
   VacationStats,
   AttendanceStats
 } from "../../shared/types/hr";
@@ -57,8 +56,8 @@ export const dummyVacations: Vacation[] = [
   {
     id: "vac-002",
     userId: "user-002",
-    startDate: new Date("2024-03-10"),
-    endDate: new Date("2024-03-15"),
+    startDate: new Date("2025-09-2"),
+    endDate: new Date("2025-09-10"),
     days: 5,
     status: "approved",
     requestedAt: new Date("2024-01-10T14:20:00Z"),
@@ -93,8 +92,8 @@ export const dummyLOAs: LeaveOfAbsence[] = [
     id: "loa-001",
     userId: "user-002",
     type: "medical",
-    startDate: new Date("2024-02-01"),
-    endDate: new Date("2024-02-28"),
+    startDate: new Date("2025-09-15"),
+    endDate: new Date("2025-09-19"),
     status: "approved",
     documents: ["medical-cert-001.pdf"],
     messages: [dummyMessages[1]!],
@@ -143,16 +142,16 @@ export const dummyBreaks: Break[] = [
 export const dummyTimesheets: Timesheet[] = [
   {
     id: "ts-001",
-    userId: "user-001",
-    date: new Date("2024-01-22"),
-    startTime: new Date("2024-01-22T09:00:00Z"),
-    endTime: new Date("2024-01-22T17:30:00Z"),
+    userId: "user-002",
+    date: new Date("2025-09-24"),
+    startTime: new Date("2025-09-24T09:00:00Z"),
+    endTime: new Date("2025-09-24T17:30:00Z"),
     breaks: [dummyBreaks[0]!, dummyBreaks[1]!],
     totalMinutes: 435, // 7h 15m
     regularMinutes: 435,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "approved",
+    status: "requires_modification",
     reviewedBy: "user-002",
     reviewedAt: new Date("2024-01-23T10:00:00Z")
   },
@@ -179,6 +178,32 @@ export const dummyTimesheets: Timesheet[] = [
     overtimeMinutes: 0,
     breakMinutes: 0,
     status: "requires_modification"
+  },
+  {
+    id: "ts-004",
+    userId: "user-002",
+    date: new Date("2025-09-22"),
+    startTime: new Date("2025-09-22T09:00:00Z"),
+    endTime: new Date("2025-09-22T18:00:00Z"),
+    breaks: [
+      {
+        id: "break-004",
+        startTime: new Date("2025-09-22T12:00:00Z"),
+        endTime: new Date("2025-09-22T13:00:00Z"),
+        totalMinutes: 60
+      },
+      {
+        id: "break-005",
+        startTime: new Date("2025-09-22T15:30:00Z"),
+        endTime: new Date("2025-09-22T15:45:00Z"),
+        totalMinutes: 15
+      }
+    ],
+    totalMinutes: 480,
+    regularMinutes: 480,
+    overtimeMinutes: 0,
+    breakMinutes: 75,
+    status: "requires_modification"
   }
 ];
 
@@ -186,8 +211,8 @@ export const dummyTimesheets: Timesheet[] = [
 export const dummyPublicHolidays: PublicHoliday[] = [
   {
     id: "ph-001",
-    name: "New Year's Day",
-    date: new Date("2024-01-01")
+    name: "Local Fastivity",
+    date: new Date("2025-09-22")
   },
   {
     id: "ph-002",
@@ -203,12 +228,12 @@ export const dummyPublicHolidays: PublicHoliday[] = [
 
 // Dummy Closing Days
 export const dummyClosingDays: ClosingDay[] = [
-  {
+  /* {
     id: "cd-001",
-    startDate: new Date("2024-12-23"),
-    endDate: new Date("2024-12-31"),
-    description: "Year-end office closure"
-  },
+    startDate: new Date("2025-09-24"),
+    endDate: new Date("2025-09-25"),
+    description: "Christmas Closing"
+  }, */
   {
     id: "cd-002",
     startDate: new Date("2024-08-15"),
@@ -361,39 +386,6 @@ export const dummyLOAListItems: LOAListItem[] = [
   }
 ];
 
-export const dummyTimesheetListItems: TimesheetListItem[] = [
-  {
-    id: "ts-001",
-    userId: "user-001",
-    employeeName: "John Doe",
-    date: new Date("2024-02-22"),
-    startTime: new Date("2024-01-22T09:00:00Z"),
-    endTime: new Date("2024-01-22T17:30:00Z"),
-    totalMinutes: 435,
-    status: "approved"
-  },
-  {
-    id: "ts-002",
-    userId: "user-002",
-    employeeName: "Jane Smith",
-    date: new Date("2024-01-22"),
-    startTime: new Date("2024-01-22T08:30:00Z"),
-    endTime: new Date("2024-01-22T18:00:00Z"),
-    totalMinutes: 510,
-    status: "requires_modification"
-  }
-  ,
-  {
-    id: "ts-003",
-    userId: "user-002",
-    employeeName: "Jane Smith",
-    date: new Date("2025-08-22"),
-    startTime: new Date("2025-09-22T09:00:00Z"),
-    endTime: new Date("2025-09-22T18:00:00Z"),
-    totalMinutes: 480,
-    status: "pending"
-  }
-];
 
 // Dummy Statistics
 export const dummyVacationStats: VacationStats = {
@@ -443,4 +435,16 @@ export const getDummyTimesheetsByUserId = (userId: string): Timesheet[] => {
 
 export const getDummyTimesheetsByStatus = (status: TimesheetStatus): Timesheet[] => {
   return dummyTimesheets.filter(timesheet => timesheet.status === status);
+};
+
+// Helper function to get timesheets with employee names populated
+export const getTimesheetsWithEmployeeNames = (): Timesheet[] => {
+  const { dummyUsers } = require('./users');
+  return dummyTimesheets.map(timesheet => ({
+    ...timesheet,
+    employeeName: (() => {
+      const user = dummyUsers.find((u: any) => u.id === timesheet.userId);
+      return user ? `${user.firstName} ${user.lastName}` : 'Unknown User';
+    })()
+  }));
 };

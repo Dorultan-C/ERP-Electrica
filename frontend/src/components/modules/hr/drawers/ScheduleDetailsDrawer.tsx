@@ -11,7 +11,12 @@ interface ScheduleDetailsDrawerProps {
 }
 
 export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
-  const { isOpen, isClosing, isExpanded, selectedId, closeDrawer, toggleExpand } = useDrawer()
+  const { isOpen, isClosing, isExpanded, selectedId, selectedType, closeDrawer, toggleExpand } = useDrawer()
+
+  // Only show this drawer for schedule-type selections
+  if (selectedType !== 'schedules') {
+    return null
+  }
 
   // Find the selected schedule
   const selectedSchedule = selectedId ? dummySchedules.find(schedule => schedule.id === selectedId) : null
@@ -34,7 +39,7 @@ export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
       title={selectedSchedule.name}
       isExpanded={isExpanded}
       onToggleExpand={toggleExpand}
-      onEdit={onEdit ? handleEdit : undefined}
+      {...(onEdit && { onEdit: handleEdit })}
       editLabel="Edit Schedule"
     >
       <div className="p-4 sm:p-6 space-y-6">
@@ -69,7 +74,7 @@ export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
                     Daily Working Hours
                   </label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {selectedSchedule.weekSchedule[0].labouringMinutes / 60} hours per day
+                    {selectedSchedule.weekSchedule[0]?.labouringMinutes ? (selectedSchedule.weekSchedule[0].labouringMinutes / 60) : 0} hours per day
                   </p>
                 </div>
 
@@ -78,7 +83,7 @@ export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
                     Work Time
                   </label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {selectedSchedule.weekSchedule[0].startTime} - {selectedSchedule.weekSchedule[0].endTime}
+                    {selectedSchedule.weekSchedule[0]?.startTime || 'N/A'} - {selectedSchedule.weekSchedule[0]?.endTime || 'N/A'}
                   </p>
                 </div>
 
@@ -87,7 +92,7 @@ export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
                     Break Time
                   </label>
                   <p className="text-sm text-gray-900 dark:text-white">
-                    {selectedSchedule.weekSchedule[0].allowedBrakeMinutes} minutes
+                    {selectedSchedule.weekSchedule[0]?.allowedBrakeMinutes || 0} minutes
                   </p>
                 </div>
               </>
@@ -181,35 +186,6 @@ export function ScheduleDetailsDrawer({ onEdit }: ScheduleDetailsDrawerProps) {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Created
-              </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {new Date(selectedSchedule.createdAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Last Updated
-              </label>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {new Date(selectedSchedule.updatedAt).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}
-              </p>
-            </div>
           </div>
         </div>
       </div>
