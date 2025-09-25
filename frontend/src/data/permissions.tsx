@@ -41,7 +41,7 @@ export const permissions: Permission[] = [
     description: "Permission to create/view/update/delete own's attendance",
     moduleId: 'hr',
     sectionId: 'attendance',
-    actions: ["create", "read", "update", "delete"]
+    actions: ["create", "read", "update", "delete", "approve", "reject", "request_changes"]
   },
 
   // HR - Attendance: Manage other's attendance
@@ -51,7 +51,7 @@ export const permissions: Permission[] = [
     description: "Permission to create/view/update/delete other's attendance",
     moduleId: 'hr',
     sectionId: 'attendance',
-    actions: ["create", "read", "update", "delete"]
+    actions: ["create", "read", "update", "delete", "approve", "reject", "request_changes"]
   },
 
   // HR - Users: View own's permissions

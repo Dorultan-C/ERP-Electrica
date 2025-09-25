@@ -203,7 +203,73 @@ export const dummyTimesheets: Timesheet[] = [
     regularMinutes: 480,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "requires_modification"
+    status: "requires_modification",
+    reviewedBy: "user-manager",
+    reviewedAt: new Date("2025-09-23T10:00:00Z")
+  },
+
+  // More pending timesheets for approval workflow testing
+  {
+    id: "ts-005",
+    userId: "user-001",
+    date: new Date("2025-09-24"),
+    startTime: new Date("2025-09-24T08:30:00Z"),
+    endTime: new Date("2025-09-24T17:00:00Z"),
+    breaks: [
+      {
+        id: "break-006",
+        startTime: new Date("2025-09-24T12:00:00Z"),
+        endTime: new Date("2025-09-24T12:30:00Z"),
+        totalMinutes: 30
+      }
+    ],
+    totalMinutes: 480,
+    regularMinutes: 480,
+    overtimeMinutes: 0,
+    breakMinutes: 30,
+    status: "pending"
+  },
+  {
+    id: "ts-006",
+    userId: "user-003",
+    date: new Date("2025-09-23"),
+    startTime: new Date("2025-09-23T09:15:00Z"),
+    endTime: new Date("2025-09-23T17:45:00Z"),
+    breaks: [
+      {
+        id: "break-007",
+        startTime: new Date("2025-09-23T12:30:00Z"),
+        endTime: new Date("2025-09-23T13:15:00Z"),
+        totalMinutes: 45
+      }
+    ],
+    totalMinutes: 465,
+    regularMinutes: 465,
+    overtimeMinutes: 0,
+    breakMinutes: 45,
+    status: "pending"
+  },
+  {
+    id: "ts-007",
+    userId: "user-005",
+    date: new Date("2025-09-21"),
+    startTime: new Date("2025-09-21T08:00:00Z"),
+    endTime: new Date("2025-09-21T16:30:00Z"),
+    breaks: [
+      {
+        id: "break-008",
+        startTime: new Date("2025-09-21T12:00:00Z"),
+        endTime: new Date("2025-09-21T13:00:00Z"),
+        totalMinutes: 60
+      }
+    ],
+    totalMinutes: 450,
+    regularMinutes: 450,
+    overtimeMinutes: 0,
+    breakMinutes: 60,
+    status: "approved",
+    reviewedBy: "user-manager",
+    reviewedAt: new Date("2025-09-22T09:00:00Z")
   }
 ];
 

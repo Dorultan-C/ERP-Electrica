@@ -81,7 +81,7 @@ export const dummyUsers: User[] = [
       },
       {
         permissionId: "hr-attendance-manage-owns",
-        actions: ["delete"]
+        actions: ["create", "read", "update", "delete", "approve", "reject", "request_changes"]
       },
       {
         permissionId: "hr-attendance-clock",
@@ -743,6 +743,43 @@ export const dummyUsers: User[] = [
     roleIds: ["role-003"],
     permissions: [],
     createdAt: new Date("2024-01-01T09:00:00Z")
+  },
+
+  // Manager with timesheet approval permissions
+  {
+    id: "user-manager",
+    username: "manager.smith",
+    firstName: "Manager",
+    lastName: "Smith",
+    email: "manager@company.com",
+    workEmail: "manager.smith@company.com",
+    phoneNumber: "+1-555-0200",
+    workPhoneNumber: "+1-555-0200",
+    address: "100 Management Ave, Boss City, BC 90001, USA",
+    nationalID: "999999999",
+    insuranceNumber: "INS999999",
+    yearlyVacationDays: 35,
+    vacationDaysType: "labouring",
+    profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
+    status: "active",
+    employmentHistory: [employmentHistoryEvents[0]!],
+    assignedScheduleId: "schedule-001",
+    roleIds: ["role-manager"],
+    permissions: [
+      {
+        permissionId: "hr-attendance-manage-others",
+        actions: ["create", "read", "update", "delete", "approve", "reject", "request_changes"]
+      },
+      {
+        permissionId: "hr-attendance-manage-owns",
+        actions: ["create", "read", "update", "delete"]
+      },
+      {
+        permissionId: "hr-attendance-clock",
+        actions: ["true"]
+      }
+    ],
+    createdAt: new Date("2020-06-01T09:00:00Z")
   }
 ];
 

@@ -1,7 +1,13 @@
 # TO DO
 ### First priority
 #### - Attendance
-- [ ] action button if absent/pending/public holiday absent
+- [ ] claude removed click timesheet details
+- [ ] cleanup users
+- [ ] fix errors AttendanceList
+- [ ] define actions manage timesheets
+- [ ] review AttendanceList
+- [ ] improve loading ui action buttons
+- [ ] review action buttons AttendanceTracker
 - [ ] owns list
 - [ ] DB view
 

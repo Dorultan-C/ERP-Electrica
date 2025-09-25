@@ -10,6 +10,8 @@ import { Avatar } from '@/components/ui/Avatar'
 import { DateRangePicker, type DateRange } from '@/components/ui/DateRangePicker'
 import { getUserStatusTextColor, getUserStatusLabel } from '@/shared/utils'
 import { Pagination } from '@/components/ui/datalist/components/Pagination'
+import { usePermissions } from '@/shared/hooks/usePermissions'
+import { approveTimesheet, rejectTimesheet, requestTimesheetChanges, resubmitTimesheet } from '@/shared/utils/timesheetActions'
 
 // Types
 type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed'
@@ -51,6 +53,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   // Hooks
   const { openDrawer } = useDrawer()
   const { user: currentUser } = useAuth()
+  const { hasPermission } = usePermissions()
 
   // State management
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -66,6 +69,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
   const ITEMS_PER_PAGE = 20
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   // Set current user as default selection (only if user hasn't manually cleared it)
   useEffect(() => {
@@ -254,6 +258,58 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   const handleTimesheetClick = useCallback((timesheet: Timesheet) => {
     openDrawer(timesheet.id, 'timesheets')
   }, [openDrawer])
+
+  // Action handlers
+  const handleApprove = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!currentUser) return
+
+    setActionLoading(timesheetId)
+    try {
+      const result = await approveTimesheet(timesheetId, currentUser.id)
+      if (!result.success) {
+        console.error('Failed to approve:', result.error)
+      }
+      // Force re-render by updating dummy data
+      window.location.reload() // In real app, this would be handled by state management
+    } finally {
+      setActionLoading(null)
+    }
+  }, [currentUser])
+
+  const handleReject = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!currentUser) return
+
+    setActionLoading(timesheetId)
+    try {
+      const result = await rejectTimesheet(timesheetId, currentUser.id, 'Timesheet rejected')
+      if (!result.success) {
+        console.error('Failed to reject:', result.error)
+      }
+      // Force re-render by updating dummy data
+      window.location.reload() // In real app, this would be handled by state management
+    } finally {
+      setActionLoading(null)
+    }
+  }, [currentUser])
+
+  const handleResubmit = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!currentUser) return
+
+    setActionLoading(timesheetId)
+    try {
+      const result = await resubmitTimesheet(timesheetId, currentUser.id)
+      if (!result.success) {
+        console.error('Failed to resubmit:', result.error)
+      }
+      // Force re-render by updating dummy data
+      window.location.reload() // In real app, this would be handled by state management
+    } finally {
+      setActionLoading(null)
+    }
+  }, [currentUser])
 
   // Helper functions
   const getStatusDisplay = (record: AttendanceRecord) => {
@@ -477,7 +533,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
               {/* Table Header */}
               <div className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                <div className="grid grid-cols-4 gap-4 px-4 py-3">
+                <div className="grid grid-cols-5 gap-4 px-4 py-3">
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Date
                   </div>
@@ -490,6 +546,9 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                   <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Hours
                   </div>
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </div>
                 </div>
               </div>
 
@@ -501,22 +560,27 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                   const isGrayedOut = !record.isExpectedWorkDay
                   const isToday = record.date.toDateString() === new Date().toDateString()
 
+                  // Permission checks for actions
+                  const isOwnTimesheet = record.timesheet?.userId === currentUser?.id
+                  const canApprove = record.timesheet?.status === 'pending' && (
+                    (hasPermission('hr-attendance-manage-others', 'approve') && !isOwnTimesheet) ||
+                    (hasPermission('hr-attendance-manage-owns', 'approve') && isOwnTimesheet)
+                  )
+                  const canReject = record.timesheet?.status === 'pending' && (
+                    (hasPermission('hr-attendance-manage-others', 'reject') && !isOwnTimesheet) ||
+                    (hasPermission('hr-attendance-manage-owns', 'reject') && isOwnTimesheet)
+                  )
+                  const canResubmit = record.timesheet?.status === 'requires_modification' && isOwnTimesheet && hasPermission('hr-attendance-manage-owns', 'update')
+
                   return (
                     <div
                       key={index}
-                      onClick={isClickable ? () => handleTimesheetClick(record.timesheet!) : undefined}
-                      className={`grid grid-cols-4 gap-4 px-6 py-3 transition-colors ${
+                      className={`grid grid-cols-5 gap-4 px-6 py-3 transition-colors ${
                         isToday
                           ? 'bg-blue-200 dark:bg-blue-900/60 relative'
                           : isGrayedOut
                           ? 'bg-gray-100 dark:bg-gray-900'
                           : 'bg-white dark:bg-gray-800'
-                      } ${
-                        isClickable
-                          ? isToday
-                            ? 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                            : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                          : ''
                       }`}
                     >
                       {isToday && (
@@ -595,6 +659,44 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                           </div>
                         ) : (
                           <div className="text-sm text-gray-400 dark:text-gray-500"></div>
+                        )}
+                      </div>
+
+                      {/* Actions Column */}
+                      <div className="flex flex-col justify-center">
+                        {record.timesheet && (canApprove || canReject || canResubmit) && (
+                          <div className="flex items-center space-x-2">
+                            {canApprove && (
+                              <button
+                                onClick={(e) => handleApprove(record.timesheet!.id, e)}
+                                disabled={actionLoading === record.timesheet!.id}
+                                className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-green-400 dark:bg-green-900/20 dark:hover:bg-green-900/30"
+                                title="Approve timesheet"
+                              >
+                                {actionLoading === record.timesheet!.id ? '...' : '✓'}
+                              </button>
+                            )}
+                            {canReject && (
+                              <button
+                                onClick={(e) => handleReject(record.timesheet!.id, e)}
+                                disabled={actionLoading === record.timesheet!.id}
+                                className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30"
+                                title="Reject timesheet"
+                              >
+                                {actionLoading === record.timesheet!.id ? '...' : '✗'}
+                              </button>
+                            )}
+                            {canResubmit && (
+                              <button
+                                onClick={(e) => handleResubmit(record.timesheet!.id, e)}
+                                disabled={actionLoading === record.timesheet!.id}
+                                className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
+                                title="Resubmit timesheet"
+                              >
+                                {actionLoading === record.timesheet!.id ? '...' : '↻'}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
