@@ -75,3 +75,8 @@ select {
   min-height: 44px; /* iOS touch target recommendation */
   touch-action: manipulation; /* Disable double-tap zoom */
 }
+
+button.btn-small,
+button.btn-small:disabled {
+  min-height: unset;
+}

@@ -9,6 +9,7 @@ import { useDrawer, useAuth } from '@/shared/contexts'
 import { Avatar } from '@/components/ui/Avatar'
 import { DateRangePicker, type DateRange } from '@/components/ui/DateRangePicker'
 import { getUserStatusTextColor, getUserStatusLabel } from '@/shared/utils'
+import { Pagination } from '@/components/ui/datalist/components/Pagination'
 
 // Types
 type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed'
@@ -36,7 +37,7 @@ const STATUS_CONFIG = {
   vacation: { label: 'Vacation', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
   loa: { label: 'Leave of Absence', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/20' },
   holiday: { label: 'Public Holiday', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
-  closed: { label: 'Office Closed', color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-900/20' }
+  closed: { label: 'Office Closed', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' }
 } as const
 
 // Timesheet status configuration
@@ -63,6 +64,8 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   })
   const [userSearchQuery, setUserSearchQuery] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 20
 
   // Set current user as default selection (only if user hasn't manually cleared it)
   useEffect(() => {
@@ -104,6 +107,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
 
     dateRangeArray.forEach(date => {
       const dateStr = date.toDateString()
+      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate()) // Normalize to midnight
 
       // Find timesheet for this user/date
       const timesheet = timesheets.find(ts =>
@@ -115,67 +119,65 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       const loa = dummyLOAs.find(l =>
         l.userId === selectedUser.id &&
         l.status === 'approved' &&
-        new Date(l.startDate) <= date &&
-        (!l.endDate || new Date(l.endDate) >= date)
+        new Date(l.startDate.getFullYear(), l.startDate.getMonth(), l.startDate.getDate()) <= dateOnly &&
+        (!l.endDate || new Date(l.endDate.getFullYear(), l.endDate.getMonth(), l.endDate.getDate()) >= dateOnly)
       )
 
       const closing = dummyClosingDays.find(c =>
-        new Date(c.startDate) <= date &&
-        new Date(c.endDate) >= date
+        new Date(c.startDate.getFullYear(), c.startDate.getMonth(), c.startDate.getDate()) <= dateOnly &&
+        new Date(c.endDate.getFullYear(), c.endDate.getMonth(), c.endDate.getDate()) >= dateOnly
       )
 
       const vacation = dummyVacations.find(v =>
         v.userId === selectedUser.id &&
         v.status === 'approved' &&
-        new Date(v.startDate) <= date &&
-        new Date(v.endDate) >= date
+        new Date(v.startDate.getFullYear(), v.startDate.getMonth(), v.startDate.getDate()) <= dateOnly &&
+        new Date(v.endDate.getFullYear(), v.endDate.getMonth(), v.endDate.getDate()) >= dateOnly
       )
 
       const holiday = dummyPublicHolidays.find(h =>
         new Date(h.date).toDateString() === dateStr
       )
 
-      // Determine status and work expectation
+      // Check user's actual schedule first
+      const userSchedule = dummySchedules.find(schedule => schedule.id === selectedUser.assignedScheduleId)
+      const dayOfWeek = date.getDay()
+      const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === dayOfWeek) || false
+
+      // Determine status and work expectation (priority order: LOA > off schedule > holiday > closing > vacation)
       let status: AttendanceStatus
       let isExpectedWorkDay = true
 
       if (loa) {
         status = 'loa'
         isExpectedWorkDay = false
+      } else if (!isScheduledWorkDay) {
+        // Off-schedule day (higher priority than holiday, closing, and vacation)
+        status = 'absent'
+        isExpectedWorkDay = false
+      } else if (holiday) {
+        status = 'holiday'
+        isExpectedWorkDay = false // Optional work day
       } else if (closing) {
         status = 'closed'
         isExpectedWorkDay = false
       } else if (vacation) {
         status = 'vacation'
         isExpectedWorkDay = false
-      } else if (holiday) {
-        status = 'holiday'
-        isExpectedWorkDay = false // Optional work day
       } else {
-        // Check user's actual schedule to determine if this is a work day
-        const userSchedule = dummySchedules.find(schedule => schedule.id === selectedUser.assignedScheduleId)
-        const dayOfWeek = date.getDay()
+        // This is a scheduled work day with no time-off
+        const today = new Date()
+        const isDateTodayOrFuture = date >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
-        // Check if this day is in the user's work schedule
-        const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === dayOfWeek) || false
-
-        if (isScheduledWorkDay) {
-          const today = new Date()
-          const isDateTodayOrFuture = date >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-          if (timesheet) {
-            status = 'present'
-          } else if (isDateTodayOrFuture) {
-            // Future work days show no status unless there are specific time-off reasons above
-            status = 'present' // Will be handled in status display to show nothing
-          } else {
-            status = 'absent' // Past dates without timesheet are truly absent
-          }
-          isExpectedWorkDay = true
+        if (timesheet) {
+          status = 'present'
+        } else if (isDateTodayOrFuture) {
+          // Future work days show no status unless there are specific time-off reasons above
+          status = 'present' // Will be handled in status display to show nothing
         } else {
-          status = 'absent'
-          isExpectedWorkDay = false
+          status = 'absent' // Past dates without timesheet are truly absent
         }
+        isExpectedWorkDay = true
       }
 
       records.push({
@@ -193,6 +195,46 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
 
     return records.sort((a, b) => a.date.getTime() - b.date.getTime()) // Chronological order
   }, [selectedUser, dateRangeArray])
+
+  // Determine if pagination should be used
+  const isWholeMonth = useMemo(() => {
+    if (!dateRange) return false
+
+    const { start, end } = dateRange
+    const startOfMonth = new Date(start.getFullYear(), start.getMonth(), 1)
+    const endOfMonth = new Date(start.getFullYear(), start.getMonth() + 1, 0)
+
+    // Check if the selected range exactly matches a whole month
+    return (
+      start.getTime() === startOfMonth.getTime() &&
+      end.getTime() === endOfMonth.getTime()
+    )
+  }, [dateRange])
+
+  const shouldUsePagination = useMemo(() => {
+    return !isWholeMonth && attendanceRecords.length > ITEMS_PER_PAGE
+  }, [isWholeMonth, attendanceRecords.length])
+
+  // Paginated records
+  const paginatedRecords = useMemo(() => {
+    if (!shouldUsePagination) {
+      return attendanceRecords
+    }
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
+    const endIndex = startIndex + ITEMS_PER_PAGE
+    return attendanceRecords.slice(startIndex, endIndex)
+  }, [attendanceRecords, currentPage, shouldUsePagination])
+
+  const totalPages = useMemo(() => {
+    if (!shouldUsePagination) return 1
+    return Math.ceil(attendanceRecords.length / ITEMS_PER_PAGE)
+  }, [attendanceRecords.length, shouldUsePagination])
+
+  // Reset pagination when date range or user changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [dateRange, selectedUser])
 
   // Event handlers
   const handleUserSelect = useCallback((user: User) => {
@@ -453,7 +495,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
 
               {/* Table Body */}
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
-                {attendanceRecords.map((record, index) => {
+                {paginatedRecords.map((record, index) => {
                   const statusDisplay = getStatusDisplay(record)
                   const isClickable = !!record.timesheet
                   const isGrayedOut = !record.isExpectedWorkDay
@@ -560,6 +602,17 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                 })}
               </div>
             </div>
+
+            {/* Pagination Controls */}
+            {shouldUsePagination && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                setCurrentPage={setCurrentPage}
+                totalItems={attendanceRecords.length}
+                pageSize={ITEMS_PER_PAGE}
+              />
+            )}
           </div>
         )}
       </div>
