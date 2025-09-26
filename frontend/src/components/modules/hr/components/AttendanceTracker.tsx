@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/shared/contexts'
 import { usePermissions } from '@/shared/hooks'
 import { dummyTimesheets, dummyVacations, dummyLOAs, dummyPublicHolidays, dummyClosingDays, dummySchedules } from '@/data/dummy/hr'
+import { approveTimesheet } from '@/shared/utils/timesheetActions'
 
 interface AttendanceState {
   isClocked: boolean
@@ -473,7 +474,7 @@ export function AttendanceTracker() {
           </div>
         )}
 
-        {/* Right Side - Action Buttons - show edit/delete for any timesheet, clock buttons only for workable days */}
+        {/* Right Side - Action Buttons - show edit/delete/approve for any timesheet, clock buttons only for workable days */}
         {shouldShowUI && (
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
             {/* Timesheet Action Buttons */}
@@ -485,10 +486,30 @@ export function AttendanceTracker() {
               const canDelete = isApproved
                 ? hasPermission('hr-attendance-manage-owns', 'delete_approved')
                 : hasPermission('hr-attendance-manage-owns', 'delete')
+              const canApprove = !isApproved && hasPermission('hr-attendance-manage-owns', 'approve')
 
-              if (canUpdate) {
-                return (
+              const buttons = []
+
+              // Approve button (highest priority for pending timesheets)
+              if (canApprove) {
+                buttons.push(
                   <button
+                    key="approve"
+                    onClick={() => user && approveTimesheet(existingTimesheet.id, user.id)}
+                    className="p-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+                )
+              }
+
+              // Edit button
+              if (canUpdate) {
+                buttons.push(
+                  <button
+                    key="edit"
                     onClick={() => console.log('Edit timesheet:', existingTimesheet.id)}
                     className="p-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
                   >
@@ -499,9 +520,11 @@ export function AttendanceTracker() {
                 )
               }
 
+              // Delete button
               if (canDelete) {
-                return (
+                buttons.push(
                   <button
+                    key="delete"
                     onClick={() => setShowDeleteConfirm(true)}
                     className="p-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
                   >
@@ -512,7 +535,7 @@ export function AttendanceTracker() {
                 )
               }
 
-              return null
+              return buttons.length > 0 ? buttons : null
             })()}
 
             {/* Clock In Button */}

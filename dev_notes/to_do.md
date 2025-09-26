@@ -7,7 +7,6 @@
 - [ ] define actions manage timesheets
 - [ ] review AttendanceList
 - [ ] improve loading ui action buttons
-- [ ] review action buttons AttendanceTracker
 - [ ] owns list
 - [ ] DB view
 

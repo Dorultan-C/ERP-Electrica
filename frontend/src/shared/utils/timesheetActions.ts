@@ -127,11 +127,10 @@ export const resubmitTimesheet = async (timesheetId: string, userId: string): Pr
     }
 
     // Update timesheet status back to pending
+    const { reviewedBy, reviewedAt, ...timesheetWithoutReview } = dummyTimesheets[timesheetIndex]!
     dummyTimesheets[timesheetIndex] = {
-      ...dummyTimesheets[timesheetIndex]!,
-      status: 'pending' as TimesheetStatus,
-      reviewedBy: undefined,
-      reviewedAt: undefined
+      ...timesheetWithoutReview,
+      status: 'pending' as TimesheetStatus
     }
 
     return { success: true, timesheet: dummyTimesheets[timesheetIndex] }

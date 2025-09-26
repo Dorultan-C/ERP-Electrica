@@ -151,7 +151,7 @@ export const dummyTimesheets: Timesheet[] = [
     regularMinutes: 435,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "approved",
+    status: "pending",
     reviewedBy: "user-002",
     reviewedAt: new Date("2024-01-23T10:00:00Z")
   },
