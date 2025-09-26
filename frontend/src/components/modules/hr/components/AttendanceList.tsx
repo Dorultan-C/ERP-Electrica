@@ -11,7 +11,7 @@ import { DateRangePicker, type DateRange } from '@/components/ui/DateRangePicker
 import { getUserStatusTextColor, getUserStatusLabel } from '@/shared/utils'
 import { Pagination } from '@/components/ui/datalist/components/Pagination'
 import { usePermissions } from '@/shared/hooks/usePermissions'
-import { approveTimesheet, rejectTimesheet, requestTimesheetChanges, resubmitTimesheet } from '@/shared/utils/timesheetActions'
+import { approveTimesheet, requestTimesheetChanges } from '@/shared/utils/timesheetActions'
 
 // Types
 type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed' | 'off_schedule'
@@ -50,6 +50,40 @@ const TIMESHEET_STATUS_CONFIG = {
   requires_modification: { label: 'Needs Changes', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/20' }
 } as const
 
+// Constants
+const ITEMS_PER_PAGE = 20
+
+// Helper functions
+const normalizeDate = (date: Date): Date => {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+const isDateInRange = (date: Date, startDate: Date, endDate?: Date): boolean => {
+  const normalizedDate = normalizeDate(date)
+  const normalizedStart = normalizeDate(startDate)
+  const normalizedEnd = endDate ? normalizeDate(endDate) : normalizedStart
+
+  return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd
+}
+
+// Action Button Component
+interface ActionButtonProps {
+  onClick: (e: React.MouseEvent) => void
+  className: string
+  title: string
+  children: React.ReactNode
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({ onClick, className, title, children }) => (
+  <button
+    onClick={onClick}
+    className={`p-2 btn-small rounded-md cursor-pointer ${className}`}
+    title={title}
+  >
+    {children}
+  </button>
+)
+
 export function AttendanceList({ className = '' }: AttendanceListProps) {
   // Hooks
   const { openDrawer } = useDrawer()
@@ -77,8 +111,8 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   const [userSearchQuery, setUserSearchQuery] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
-  const ITEMS_PER_PAGE = 20
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [timesheetToDelete, setTimesheetToDelete] = useState<string | null>(null)
 
   // Set current user as default selection (only if user hasn't manually cleared it)
   useEffect(() => {
@@ -127,7 +161,6 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
 
     dateRangeArray.forEach(date => {
       const dateStr = date.toDateString()
-      const dateOnly = new Date(date.getFullYear(), date.getMonth(), date.getDate()) // Normalize to midnight
 
       // Find timesheet for this user/date
       const timesheet = timesheets.find(ts =>
@@ -139,20 +172,17 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       const loa = dummyLOAs.find(l =>
         l.userId === selectedUser.id &&
         l.status === 'approved' &&
-        new Date(l.startDate.getFullYear(), l.startDate.getMonth(), l.startDate.getDate()) <= dateOnly &&
-        (!l.endDate || new Date(l.endDate.getFullYear(), l.endDate.getMonth(), l.endDate.getDate()) >= dateOnly)
+        isDateInRange(date, l.startDate, l.endDate)
       )
 
       const closing = dummyClosingDays.find(c =>
-        new Date(c.startDate.getFullYear(), c.startDate.getMonth(), c.startDate.getDate()) <= dateOnly &&
-        new Date(c.endDate.getFullYear(), c.endDate.getMonth(), c.endDate.getDate()) >= dateOnly
+        isDateInRange(date, c.startDate, c.endDate)
       )
 
       const vacation = dummyVacations.find(v =>
         v.userId === selectedUser.id &&
         v.status === 'approved' &&
-        new Date(v.startDate.getFullYear(), v.startDate.getMonth(), v.startDate.getDate()) <= dateOnly &&
-        new Date(v.endDate.getFullYear(), v.endDate.getMonth(), v.endDate.getDate()) >= dateOnly
+        isDateInRange(date, v.startDate, v.endDate)
       )
 
       const holiday = dummyPublicHolidays.find(h =>
@@ -165,40 +195,21 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === dayOfWeek) || false
 
       // Determine status and work expectation (priority order: LOA > off schedule > holiday > closing > vacation)
-      let status: AttendanceStatus
-      let isExpectedWorkDay = true
+      const { status, isExpectedWorkDay } = (() => {
+        if (loa) return { status: 'loa' as AttendanceStatus, isExpectedWorkDay: false }
+        if (!isScheduledWorkDay) return { status: 'off_schedule' as AttendanceStatus, isExpectedWorkDay: false }
+        if (holiday) return { status: 'holiday' as AttendanceStatus, isExpectedWorkDay: false }
+        if (closing) return { status: 'closed' as AttendanceStatus, isExpectedWorkDay: false }
+        if (vacation) return { status: 'vacation' as AttendanceStatus, isExpectedWorkDay: false }
 
-      if (loa) {
-        status = 'loa'
-        isExpectedWorkDay = false
-      } else if (!isScheduledWorkDay) {
-        // Off-schedule day (higher priority than holiday, closing, and vacation)
-        status = 'off_schedule'
-        isExpectedWorkDay = false
-      } else if (holiday) {
-        status = 'holiday'
-        isExpectedWorkDay = false // Optional work day
-      } else if (closing) {
-        status = 'closed'
-        isExpectedWorkDay = false
-      } else if (vacation) {
-        status = 'vacation'
-        isExpectedWorkDay = false
-      } else {
         // This is a scheduled work day with no time-off
-        const today = new Date()
-        const isDateTodayOrFuture = date >= new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        const today = normalizeDate(new Date())
+        const currentDate = normalizeDate(date)
 
-        if (timesheet) {
-          status = 'present'
-        } else if (isDateTodayOrFuture) {
-          // Future work days show no status unless there are specific time-off reasons above
-          status = 'present' // Will be handled in status display to show nothing
-        } else {
-          status = 'absent' // Past dates without timesheet are truly absent
-        }
-        isExpectedWorkDay = true
-      }
+        if (timesheet) return { status: 'present' as AttendanceStatus, isExpectedWorkDay: true }
+        if (currentDate >= today) return { status: 'present' as AttendanceStatus, isExpectedWorkDay: true } // Future dates
+        return { status: 'absent' as AttendanceStatus, isExpectedWorkDay: true } // Past dates without timesheet
+      })()
 
       records.push({
         userId: selectedUser.id,
@@ -280,7 +291,6 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
     e.stopPropagation()
     if (!currentUser) return
 
-    setActionLoading(timesheetId)
     try {
       const result = await approveTimesheet(timesheetId, currentUser.id)
       if (!result.success) {
@@ -288,44 +298,55 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       }
       // Force re-render by updating dummy data
       window.location.reload() // In real app, this would be handled by state management
-    } finally {
-      setActionLoading(null)
+    } catch (error) {
+      console.error('Error approving timesheet:', error)
     }
   }, [currentUser])
 
-  const handleReject = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+  const handleRequestChanges = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
     e.stopPropagation()
     if (!currentUser) return
 
-    setActionLoading(timesheetId)
     try {
-      const result = await rejectTimesheet(timesheetId, currentUser.id, 'Timesheet rejected')
+      const result = await requestTimesheetChanges(timesheetId, currentUser.id, "Please review and make necessary changes")
       if (!result.success) {
-        console.error('Failed to reject:', result.error)
+        console.error('Failed to request changes:', result.error)
       }
       // Force re-render by updating dummy data
       window.location.reload() // In real app, this would be handled by state management
-    } finally {
-      setActionLoading(null)
+    } catch (error) {
+      console.error('Error requesting timesheet changes:', error)
     }
   }, [currentUser])
 
-  const handleResubmit = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+  const handleDelete = useCallback((timesheetId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    if (!currentUser) return
+    setTimesheetToDelete(timesheetId)
+    setShowDeleteConfirm(true)
+  }, [])
 
-    setActionLoading(timesheetId)
+  const handleDeleteTimesheet = useCallback(async () => {
+    if (!currentUser || !timesheetToDelete) return
+
     try {
-      const result = await resubmitTimesheet(timesheetId, currentUser.id)
-      if (!result.success) {
-        console.error('Failed to resubmit:', result.error)
-      }
+      console.log('Delete timesheet:', timesheetToDelete)
+      // TODO: Implement actual deletion logic (Phase 9+)
       // Force re-render by updating dummy data
       window.location.reload() // In real app, this would be handled by state management
+    } catch (error) {
+      console.error('Error deleting timesheet:', error)
     } finally {
-      setActionLoading(null)
+      setShowDeleteConfirm(false)
+      setTimesheetToDelete(null)
     }
-  }, [currentUser])
+  }, [currentUser, timesheetToDelete])
+
+  const handleEdit = useCallback(async (timesheetId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Edit timesheet:', timesheetId)
+    // TODO: Implement edit functionality (Phase 9+)
+  }, [])
+
 
   // Helper functions
   const getStatusDisplay = (record: AttendanceRecord) => {
@@ -546,19 +567,19 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
               {/* Table Header */}
               <div className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
                 <div className="grid grid-cols-5 gap-4 px-4 py-3">
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-start">
                     Date
                   </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
                     Status
                   </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
                     Entry / Exit
                   </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
                     Hours
                   </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-end">
                     Actions
                   </div>
                 </div>
@@ -573,19 +594,18 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
 
                   // Permission checks for actions and reading
                   const isOwnTimesheet = record.timesheet?.userId === currentUser?.id
-                  const canReadTimesheet = isOwnTimesheet
-                    ? hasPermission('hr-attendance-manage-owns', 'read')
-                    : hasPermission('hr-attendance-manage-others', 'read')
+                  const permissionType = isOwnTimesheet ? 'hr-attendance-manage-owns' : 'hr-attendance-manage-others'
+                  const canReadTimesheet = hasPermission(permissionType, 'read')
                   const isClickable = !!record.timesheet && canReadTimesheet
-                  const canApprove = (record.timesheet?.status === 'pending' || record.timesheet?.status === 'requires_modification') && (
-                    (hasPermission('hr-attendance-manage-others', 'approve') && !isOwnTimesheet) ||
-                    (hasPermission('hr-attendance-manage-owns', 'approve') && isOwnTimesheet)
-                  )
-                  const canReject = (record.timesheet?.status === 'pending' || record.timesheet?.status === 'requires_modification') && (
-                    (hasPermission('hr-attendance-manage-others', 'reject') && !isOwnTimesheet) ||
-                    (hasPermission('hr-attendance-manage-owns', 'reject') && isOwnTimesheet)
-                  )
-                  const canResubmit = record.timesheet?.status === 'requires_modification' && isOwnTimesheet && hasPermission('hr-attendance-manage-owns', 'update')
+                  const isApproved = record.timesheet?.status === 'approved'
+                  const isChangeRequired = record.timesheet?.status === 'requires_modification'
+                  const isPending = record.timesheet?.status === 'pending' || isChangeRequired
+
+                  const canApprove = isPending && hasPermission(permissionType, 'approve')
+                  const canRequestChanges = isPending && hasPermission(permissionType, 'request_changes') && !isChangeRequired
+                  const canDelete = hasPermission(permissionType, isApproved ? 'delete_approved' : 'delete')
+                  const canEdit = canReadTimesheet && hasPermission(permissionType, isApproved ? 'update_approved' : 'update')
+
 
                   return (
                     <div
@@ -600,8 +620,8 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       } ${
                         isClickable
                           ? isToday
-                            ? 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
-                            : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                            ? 'cursor-pointer [&:not(:has(.pointer-events-auto:hover))]:hover:bg-blue-100 dark:[&:not(:has(.pointer-events-auto:hover))]:hover:bg-blue-900/30'
+                            : 'cursor-pointer [&:not(:has(.pointer-events-auto:hover))]:hover:bg-gray-50 dark:[&:not(:has(.pointer-events-auto:hover))]:hover:bg-gray-700/50'
                           : ''
                       }`}
                     >
@@ -609,7 +629,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
                       )}
                       {/* Date Column */}
-                      <div className="flex flex-col">
+                      <div className="flex flex-col items-start">
                         <div className="font-medium text-gray-900 dark:text-white text-sm">
                           {formatDateForList(record.date)}
                         </div>
@@ -619,7 +639,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       </div>
 
                       {/* Status Column */}
-                      <div className="flex flex-col justify-center">
+                      <div className="flex flex-col justify-center items-center">
                         <div className="flex items-center space-x-2">
                           {!statusDisplay.showNothing && (
                             <>
@@ -637,7 +657,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       </div>
 
                       {/* Entry / Exit Column */}
-                      <div className="flex flex-col justify-center">
+                      <div className="flex flex-col justify-center items-center">
                         {record.timesheet ? (
                           canReadTimesheet ? (
                             <div className="font-medium text-lg text-gray-700 dark:text-gray-300 flex items-center">
@@ -663,7 +683,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       </div>
 
                       {/* Hours Column */}
-                      <div className="flex flex-col justify-center">
+                      <div className="flex flex-col justify-center items-center">
                         {record.timesheet && record.hours ? (
                           canReadTimesheet ? (
                             <div className="flex items-center justify-start space-x-4">
@@ -697,38 +717,52 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       </div>
 
                       {/* Actions Column */}
-                      <div className="flex flex-col justify-center">
-                        {record.timesheet && (canApprove || canReject || canResubmit) && (
-                          <div className="flex items-center space-x-2">
+                      <div className="flex flex-col justify-center items-end">
+                        {record.timesheet && (canApprove || canRequestChanges || canDelete || canEdit) && (
+                          <div className="flex items-center space-x-1 justify-end pointer-events-auto">
                             {canApprove && (
-                              <button
+                              <ActionButton
                                 onClick={(e) => handleApprove(record.timesheet!.id, e)}
-                                disabled={actionLoading === record.timesheet!.id}
-                                className="px-2 py-1 text-xs font-medium text-green-700 bg-green-100 rounded-md hover:bg-green-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-green-400 dark:bg-green-900/20 dark:hover:bg-green-900/30"
+                                className="text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
                                 title="Approve timesheet"
                               >
-                                {actionLoading === record.timesheet!.id ? '...' : '✓'}
-                              </button>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </ActionButton>
                             )}
-                            {canReject && (
-                              <button
-                                onClick={(e) => handleReject(record.timesheet!.id, e)}
-                                disabled={actionLoading === record.timesheet!.id}
-                                className="px-2 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-md hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-red-400 dark:bg-red-900/20 dark:hover:bg-red-900/30"
-                                title="Reject timesheet"
+                            {canRequestChanges && (
+                              <ActionButton
+                                onClick={(e) => handleRequestChanges(record.timesheet!.id, e)}
+                                className="text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+                                title="Request changes"
                               >
-                                {actionLoading === record.timesheet!.id ? '...' : '✗'}
-                              </button>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                              </ActionButton>
                             )}
-                            {canResubmit && (
-                              <button
-                                onClick={(e) => handleResubmit(record.timesheet!.id, e)}
-                                disabled={actionLoading === record.timesheet!.id}
-                                className="px-2 py-1 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed dark:text-blue-400 dark:bg-blue-900/20 dark:hover:bg-blue-900/30"
-                                title="Resubmit timesheet"
+                            {canEdit && (
+                              <ActionButton
+                                onClick={(e) => handleEdit(record.timesheet!.id, e)}
+                                className="text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                title="Edit timesheet"
                               >
-                                {actionLoading === record.timesheet!.id ? '...' : '↻'}
-                              </button>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {canDelete && (
+                              <ActionButton
+                                onClick={(e) => handleDelete(record.timesheet!.id, e)}
+                                className="text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                                title="Delete timesheet"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </ActionButton>
                             )}
                           </div>
                         )}
@@ -752,6 +786,37 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+        >
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+              Delete Timesheet
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+              Are you sure you want to delete this timesheet? This action cannot be undone.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-900 dark:text-white rounded-lg transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteTimesheet}
+                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

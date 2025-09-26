@@ -1,13 +1,12 @@
 # TO DO
 ### First priority
 #### - Attendance
-- [ ] claude removed click timesheet details
-- [ ] cleanup users
-- [ ] fix errors AttendanceList
-- [ ] define actions manage timesheets
-- [ ] review AttendanceList
-- [ ] improve loading ui action buttons
-- [ ] owns list
+- [ ] AttendanceList mobile responsiveness
+- [ ] AttendanceList employment history
+- [ ] AttendanceTracker employment history
+- [ ] AttendanceList current user top of dropdown
+- [ ] AttendanceList create timesheet/request timesheet button, absent days/optional work days
+- [ ] AttendanceList date picker console error
 - [ ] DB view
 
 #### - Users

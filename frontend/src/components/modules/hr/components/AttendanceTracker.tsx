@@ -476,17 +476,17 @@ export function AttendanceTracker() {
 
         {/* Right Side - Action Buttons - show edit/delete/approve for any timesheet, clock buttons only for workable days */}
         {shouldShowUI && (
-          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
+          <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             {/* Timesheet Action Buttons */}
             {existingTimesheet && (() => {
               const isApproved = existingTimesheet.status === 'approved'
               const canUpdate = canReadTimesheet && (isApproved
                 ? hasPermission('hr-attendance-manage-owns', 'update_approved')
                 : hasPermission('hr-attendance-manage-owns', 'update'))
-              const canDelete = isApproved
+              const canDelete = canReadTimesheet && (isApproved
                 ? hasPermission('hr-attendance-manage-owns', 'delete_approved')
-                : hasPermission('hr-attendance-manage-owns', 'delete')
-              const canApprove = !isApproved && hasPermission('hr-attendance-manage-owns', 'approve')
+                : hasPermission('hr-attendance-manage-owns', 'delete'))
+              const canApprove = canReadTimesheet && !isApproved && hasPermission('hr-attendance-manage-owns', 'approve')
 
               const buttons = []
 
