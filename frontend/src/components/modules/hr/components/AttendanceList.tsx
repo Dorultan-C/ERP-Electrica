@@ -14,7 +14,7 @@ import { usePermissions } from '@/shared/hooks/usePermissions'
 import { approveTimesheet, rejectTimesheet, requestTimesheetChanges, resubmitTimesheet } from '@/shared/utils/timesheetActions'
 
 // Types
-type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed'
+type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed' | 'off_schedule'
 
 interface AttendanceListProps {
   className?: string
@@ -39,8 +39,9 @@ const STATUS_CONFIG = {
   vacation: { label: 'Vacation', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
   loa: { label: 'Leave of Absence', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/20' },
   holiday: { label: 'Public Holiday', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
-  closed: { label: 'Office Closed', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' }
-} as const
+  closed: { label: 'Office Closed', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
+  off_schedule: { label: 'Off Schedule', color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-900/20' }
+}
 
 // Timesheet status configuration
 const TIMESHEET_STATUS_CONFIG = {
@@ -54,6 +55,14 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
   const { openDrawer } = useDrawer()
   const { user: currentUser } = useAuth()
   const { hasPermission } = usePermissions()
+
+  // Permission check - user must have permission to read their own or others' attendance
+  const canReadOwn = hasPermission('hr-attendance-manage-owns', 'read')
+  const canReadOthers = hasPermission('hr-attendance-manage-others', 'read')
+
+  if (!canReadOwn && !canReadOthers) {
+    return null
+  }
 
   // State management
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
@@ -76,18 +85,25 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
     if (currentUser && !selectedUser && !hasUserManuallyClearedSelection) {
       setSelectedUser(currentUser)
     }
-  }, [currentUser, selectedUser, hasUserManuallyClearedSelection])
+    // If user can only read their own attendance, force selection to current user
+    if (currentUser && canReadOwn && !canReadOthers && selectedUser?.id !== currentUser.id) {
+      setSelectedUser(currentUser)
+    }
+  }, [currentUser, selectedUser, hasUserManuallyClearedSelection, canReadOwn, canReadOthers])
 
   // Memoized computations
   const filteredUsers = useMemo(() => {
-    if (!userSearchQuery.trim()) return dummyUsers
+    // If user can only read their own attendance, only show current user
+    const availableUsers = canReadOthers ? dummyUsers : (currentUser ? [currentUser] : [])
+
+    if (!userSearchQuery.trim()) return availableUsers
 
     const searchTerm = userSearchQuery.toLowerCase().trim()
-    return dummyUsers.filter(user =>
+    return availableUsers.filter(user =>
       `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm) ||
       user.email.toLowerCase().includes(searchTerm)
     )
-  }, [userSearchQuery])
+  }, [userSearchQuery, canReadOthers, currentUser])
 
   const dateRangeArray = useMemo(() => {
     if (!dateRange) return []
@@ -157,7 +173,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
         isExpectedWorkDay = false
       } else if (!isScheduledWorkDay) {
         // Off-schedule day (higher priority than holiday, closing, and vacation)
-        status = 'absent'
+        status = 'off_schedule'
         isExpectedWorkDay = false
       } else if (holiday) {
         status = 'holiday'
@@ -321,9 +337,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       if (!record.isExpectedWorkDay) {
         const dayConfig = STATUS_CONFIG[record.status]
         let dayLabel: string = dayConfig.label
-        if (record.status === 'absent') {
-          dayLabel = 'Off Schedule'
-        } else if (record.status === 'holiday' && record.holiday?.name) {
+        if (record.status === 'holiday' && record.holiday?.name) {
           dayLabel = record.holiday.name
         }
 
@@ -332,8 +346,8 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
           primaryColor: timesheetConfig.color,
           primaryBgColor: timesheetConfig.bgColor,
           secondaryLabel: dayLabel,
-          secondaryColor: record.status === 'absent' ? 'text-gray-600 dark:text-gray-400' : dayConfig.color,
-          secondaryBgColor: record.status === 'absent' ? 'bg-gray-100 dark:bg-gray-900/20' : dayConfig.bgColor,
+          secondaryColor: dayConfig.color,
+          secondaryBgColor: dayConfig.bgColor,
           hasDualStatus: true
         }
       } else {
@@ -352,11 +366,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       let color = config.color
       let bgColor = config.bgColor
 
-      if (record.status === 'absent' && !record.isExpectedWorkDay) {
-        label = 'Off Schedule'
-        color = 'text-gray-600 dark:text-gray-400'
-        bgColor = 'bg-gray-100 dark:bg-gray-900/20'
-      } else if (record.status === 'holiday' && record.holiday?.name) {
+      if (record.status === 'holiday' && record.holiday?.name) {
         // Use the specific holiday name instead of generic "Public Holiday"
         label = record.holiday.name
       } else if (record.status === 'present' && record.isExpectedWorkDay) {
@@ -414,86 +424,88 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       {/* Filters Section */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* User Selection */}
-          <div>
-            {/* User Search Dropdown */}
-            <div className="relative">
+          {/* User Selection - only show dropdown if user can read others' attendance */}
+          {canReadOthers && (
+            <div>
+              {/* User Search Dropdown */}
               <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search employees..."
-                  value={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : userSearchQuery}
-                  onChange={(e) => {
-                    if (selectedUser) {
-                      // If user is selected and they start typing, clear selection and use their input
-                      setSelectedUser(null)
-                      setUserSearchQuery(e.target.value)
-                    } else {
-                      setUserSearchQuery(e.target.value)
-                    }
-                  }}
-                  onFocus={() => setShowUserDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                />
-                {selectedUser && (
-                  <button
-                    onClick={handleUserRemove}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
-                    aria-label="Clear selected employee"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
-                )}
-              </div>
-
-              {showUserDropdown && (
-                <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                  {filteredUsers.length > 0 ? (
-                    filteredUsers.map(user => (
-                      <button
-                        key={user.id}
-                        onClick={() => handleUserSelect(user)}
-                        className={`w-full text-left px-3 py-2 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-between transition-colors ${
-                          selectedUser?.id === user.id
-                            ? 'bg-blue-50 dark:bg-blue-900/50'
-                            : ''
-                        }`}
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Avatar
-                            src={user.profileImage}
-                            name={`${user.firstName} ${user.lastName}`}
-                            size="sm"
-                            className="flex-shrink-0"
-                          />
-                          <div>
-                            <div className="font-medium">{user.firstName} {user.lastName}</div>
-                            <div className="flex items-center">
-                              <span className={`inline-flex items-center text-xs font-medium ${getUserStatusTextColor(user.status)}`}>
-                                {getUserStatusLabel(user.status)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        {selectedUser?.id === user.id && (
-                          <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))
-                  ) : (
-                    <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm text-center">
-                      No employees found
-                    </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search employees..."
+                    value={selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : userSearchQuery}
+                    onChange={(e) => {
+                      if (selectedUser) {
+                        // If user is selected and they start typing, clear selection and use their input
+                        setSelectedUser(null)
+                        setUserSearchQuery(e.target.value)
+                      } else {
+                        setUserSearchQuery(e.target.value)
+                      }
+                    }}
+                    onFocus={() => setShowUserDropdown(true)}
+                    onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                  {selectedUser && (
+                    <button
+                      onClick={handleUserRemove}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors p-1"
+                      aria-label="Clear selected employee"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   )}
                 </div>
-              )}
+
+                {showUserDropdown && (
+                  <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map(user => (
+                        <button
+                          key={user.id}
+                          onClick={() => handleUserSelect(user)}
+                          className={`w-full text-left px-3 py-2 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-between transition-colors ${
+                            selectedUser?.id === user.id
+                              ? 'bg-blue-50 dark:bg-blue-900/50'
+                              : ''
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Avatar
+                              src={user.profileImage}
+                              name={`${user.firstName} ${user.lastName}`}
+                              size="sm"
+                              className="flex-shrink-0"
+                            />
+                            <div>
+                              <div className="font-medium">{user.firstName} {user.lastName}</div>
+                              <div className="flex items-center">
+                                <span className={`inline-flex items-center text-xs font-medium ${getUserStatusTextColor(user.status)}`}>
+                                  {getUserStatusLabel(user.status)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          {selectedUser?.id === user.id && (
+                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm text-center">
+                        No employees found
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Date Range Selection */}
           <div>
