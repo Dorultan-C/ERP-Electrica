@@ -556,17 +556,20 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {paginatedRecords.map((record, index) => {
                   const statusDisplay = getStatusDisplay(record)
-                  const isClickable = !!record.timesheet
                   const isGrayedOut = !record.isExpectedWorkDay
                   const isToday = record.date.toDateString() === new Date().toDateString()
 
-                  // Permission checks for actions
+                  // Permission checks for actions and reading
                   const isOwnTimesheet = record.timesheet?.userId === currentUser?.id
-                  const canApprove = record.timesheet?.status === 'pending' && (
+                  const canReadTimesheet = isOwnTimesheet
+                    ? hasPermission('hr-attendance-manage-owns', 'read')
+                    : hasPermission('hr-attendance-manage-others', 'read')
+                  const isClickable = !!record.timesheet && canReadTimesheet
+                  const canApprove = (record.timesheet?.status === 'pending' || record.timesheet?.status === 'requires_modification') && (
                     (hasPermission('hr-attendance-manage-others', 'approve') && !isOwnTimesheet) ||
                     (hasPermission('hr-attendance-manage-owns', 'approve') && isOwnTimesheet)
                   )
-                  const canReject = record.timesheet?.status === 'pending' && (
+                  const canReject = (record.timesheet?.status === 'pending' || record.timesheet?.status === 'requires_modification') && (
                     (hasPermission('hr-attendance-manage-others', 'reject') && !isOwnTimesheet) ||
                     (hasPermission('hr-attendance-manage-owns', 'reject') && isOwnTimesheet)
                   )
@@ -575,12 +578,19 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                   return (
                     <div
                       key={index}
+                      onClick={isClickable ? () => handleTimesheetClick(record.timesheet!) : undefined}
                       className={`grid grid-cols-5 gap-4 px-6 py-3 transition-colors ${
                         isToday
                           ? 'bg-blue-200 dark:bg-blue-900/60 relative'
                           : isGrayedOut
                           ? 'bg-gray-100 dark:bg-gray-900'
                           : 'bg-white dark:bg-gray-800'
+                      } ${
+                        isClickable
+                          ? isToday
+                            ? 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                            : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                          : ''
                       }`}
                     >
                       {isToday && (
@@ -614,21 +624,27 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                         </div>
                       </div>
 
-                      {/* Timesheet Column */}
+                      {/* Entry / Exit Column */}
                       <div className="flex flex-col justify-center">
                         {record.timesheet ? (
-                          <div className="font-medium text-lg text-gray-700 dark:text-gray-300 flex items-center">
-                            <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            {record.timesheet.startTime && record.timesheet.endTime ? (
-                              `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(record.timesheet.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
-                            ) : record.timesheet.startTime ? (
-                              `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - In Progress`
-                            ) : (
-                              'Incomplete'
-                            )}
-                          </div>
+                          canReadTimesheet ? (
+                            <div className="font-medium text-lg text-gray-700 dark:text-gray-300 flex items-center">
+                              <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              {record.timesheet.startTime && record.timesheet.endTime ? (
+                                `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(record.timesheet.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                              ) : record.timesheet.startTime ? (
+                                `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - In Progress`
+                              ) : (
+                                'Incomplete'
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              Limited access
+                            </div>
+                          )
                         ) : (
                           <div className="text-base text-gray-400 dark:text-gray-500"></div>
                         )}
@@ -637,26 +653,32 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       {/* Hours Column */}
                       <div className="flex flex-col justify-center">
                         {record.timesheet && record.hours ? (
-                          <div className="flex items-center justify-start space-x-4">
-                            <div className="font-medium text-gray-700 dark:text-gray-300 text-lg flex items-center">
-                              <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" />
-                                <line x1="4" y1="12" x2="20" y2="12" strokeWidth={1} />
-                              </svg>
-                              {Math.floor(record.timesheet!.totalMinutes / 60)}h {record.timesheet!.totalMinutes % 60}m
-                            </div>
-                            {record.breaks !== undefined && record.breaks > 0 && (
-                              <div className="text-gray-600 dark:text-gray-400 text-lg flex items-center">
+                          canReadTimesheet ? (
+                            <div className="flex items-center justify-start space-x-4">
+                              <div className="font-medium text-gray-700 dark:text-gray-300 text-lg flex items-center">
                                 <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12v12H6z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 11h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5v1M12 5v1M15 5v1" />
+                                  <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                  <line x1="4" y1="12" x2="20" y2="12" strokeWidth={1} />
                                 </svg>
-                                {Math.floor(record.timesheet!.breakMinutes / 60)}h {record.timesheet!.breakMinutes % 60}m
+                                {Math.floor(record.timesheet!.totalMinutes / 60)}h {record.timesheet!.totalMinutes % 60}m
                               </div>
-                            )}
-                          </div>
+                              {record.breaks !== undefined && record.breaks > 0 && (
+                                <div className="text-gray-600 dark:text-gray-400 text-lg flex items-center">
+                                  <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12v12H6z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 11h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5v1M12 5v1M15 5v1" />
+                                  </svg>
+                                  {Math.floor(record.timesheet!.breakMinutes / 60)}h {record.timesheet!.breakMinutes % 60}m
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              Limited access
+                            </div>
+                          )
                         ) : (
                           <div className="text-sm text-gray-400 dark:text-gray-500"></div>
                         )}

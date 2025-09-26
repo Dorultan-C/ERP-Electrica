@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/shared/contexts'
 import { usePermissions } from '@/shared/hooks'
 import { dummyTimesheets, dummyVacations, dummyLOAs, dummyPublicHolidays, dummyClosingDays, dummySchedules } from '@/data/dummy/hr'
-import { approveTimesheet, rejectTimesheet, requestTimesheetChanges, resubmitTimesheet } from '@/shared/utils/timesheetActions'
 
 interface AttendanceState {
   isClocked: boolean
@@ -33,7 +32,11 @@ export function AttendanceTracker() {
   })
   const [currentTime, setCurrentTime] = useState(new Date())
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  // Early return if user doesn't have clock permission
+  if (!hasPermission('hr-attendance-clock', 'true')) {
+    return null
+  }
 
   // Update current time every second
   useEffect(() => {
@@ -44,21 +47,18 @@ export function AttendanceTracker() {
     return () => clearInterval(timer)
   }, [])
 
-  // Check if user has clock permission - if not, don't render the component
-  if (!hasPermission('hr-attendance-clock', 'true')) {
-    return null
-  }
-
-  // Check if there's already a timesheet for today
+  // Date and time calculations
   const today = new Date()
   const todayString = today.toDateString()
-  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate()) // Normalize to midnight
+  const todayDateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  const todayDayOfWeek = today.getDay()
+
+  // Get existing data for today
   const existingTimesheet = user ? dummyTimesheets.find(
     timesheet => timesheet.userId === user.id &&
     new Date(timesheet.date).toDateString() === todayString
   ) : null
 
-  // Check for approved vacation
   const approvedVacation = user ? dummyVacations.find(
     vacation => vacation.userId === user.id &&
     vacation.status === 'approved' &&
@@ -66,7 +66,6 @@ export function AttendanceTracker() {
     new Date(vacation.endDate.getFullYear(), vacation.endDate.getMonth(), vacation.endDate.getDate()) >= todayDateOnly
   ) : null
 
-  // Check for approved LOA
   const approvedLOA = user ? dummyLOAs.find(
     loa => loa.userId === user.id &&
     loa.status === 'approved' &&
@@ -74,23 +73,19 @@ export function AttendanceTracker() {
     (loa.endDate ? new Date(loa.endDate.getFullYear(), loa.endDate.getMonth(), loa.endDate.getDate()) >= todayDateOnly : true)
   ) : null
 
-  // Check for public holiday
   const publicHoliday = dummyPublicHolidays.find(
     holiday => new Date(holiday.date).toDateString() === todayString
   )
 
-  // Check for closing day
   const closingDay = dummyClosingDays.find(
     closing => new Date(closing.startDate.getFullYear(), closing.startDate.getMonth(), closing.startDate.getDate()) <= todayDateOnly &&
     new Date(closing.endDate.getFullYear(), closing.endDate.getMonth(), closing.endDate.getDate()) >= todayDateOnly
   )
 
-  // Check if today is a scheduled work day for the user
   const userSchedule = user ? dummySchedules.find(schedule => schedule.id === user.assignedScheduleId) : null
-  const todayDayOfWeek = today.getDay() // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
   const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === todayDayOfWeek) || false
 
-  // Display: What day type to show (priority order: LOA > off schedule > holiday > closing > vacation)
+  // Determine day type (priority order: LOA > off schedule > holiday > closing > vacation)
   const dayType = approvedLOA ? 'loa' :
                  !isScheduledWorkDay ? 'off_schedule' :
                  publicHoliday ? 'holiday' :
@@ -98,20 +93,20 @@ export function AttendanceTracker() {
                  approvedVacation ? 'vacation' :
                  'normal'
 
-  // Work permission: Can they work today? (any blocking condition = no)
+  // Determine if user can work today
   const canWork = !approvedLOA && !closingDay && !approvedVacation
-
-  // Show UI elements if can work OR if there's an existing timesheet
   const shouldShowUI = canWork || !!existingTimesheet
 
-  // Calculate worked time
+  // Permission checks
+  const canReadTimesheet = hasPermission('hr-attendance-manage-owns', 'read')
+
+  // Time calculation functions
   const calculateWorkedTime = () => {
     if (!attendanceState.clockInTime) return 0
 
     const now = new Date()
     const totalMinutes = Math.floor((now.getTime() - attendanceState.clockInTime.getTime()) / (1000 * 60))
 
-    // Subtract break time if currently on break
     let breakDeduction = attendanceState.totalBreakMinutes
     if (attendanceState.onBreak && attendanceState.currentBreakStart) {
       breakDeduction += Math.floor((now.getTime() - attendanceState.currentBreakStart.getTime()) / (1000 * 60))
@@ -119,6 +114,19 @@ export function AttendanceTracker() {
 
     return Math.max(0, totalMinutes - breakDeduction)
   }
+
+  const getCurrentBreakTime = () => {
+    let totalBreakTime = attendanceState.totalBreakMinutes
+
+    if (attendanceState.onBreak && attendanceState.currentBreakStart) {
+      const currentBreakDuration = Math.floor((new Date().getTime() - attendanceState.currentBreakStart.getTime()) / (1000 * 60))
+      totalBreakTime += currentBreakDuration
+    }
+
+    return totalBreakTime
+  }
+
+  const currentWorkedTime = attendanceState.isClocked ? calculateWorkedTime() : attendanceState.totalWorkedMinutes
 
   // Handle clock in
   const handleClockIn = () => {
@@ -183,68 +191,15 @@ export function AttendanceTracker() {
     })
   }
 
-  // Handle delete timesheet
+  // Event handlers
   const handleDeleteTimesheet = () => {
     if (existingTimesheet) {
       console.log('Delete timesheet:', existingTimesheet.id)
-      // TODO: Implement actual deletion logic (Phase 9+)
       setShowDeleteConfirm(false)
     }
   }
 
-  // Timesheet approval actions
-  const handleApprove = async (timesheetId: string) => {
-    if (!user) return
-
-    setActionLoading(timesheetId)
-    try {
-      const result = await approveTimesheet(timesheetId, user.id)
-      if (!result.success) {
-        console.error('Failed to approve:', result.error)
-      } else {
-        // Force re-render by reloading (in real app, this would be handled by state management)
-        window.location.reload()
-      }
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleReject = async (timesheetId: string) => {
-    if (!user) return
-
-    setActionLoading(timesheetId)
-    try {
-      const result = await rejectTimesheet(timesheetId, user.id, 'Timesheet rejected')
-      if (!result.success) {
-        console.error('Failed to reject:', result.error)
-      } else {
-        // Force re-render by reloading (in real app, this would be handled by state management)
-        window.location.reload()
-      }
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  const handleResubmit = async (timesheetId: string) => {
-    if (!user) return
-
-    setActionLoading(timesheetId)
-    try {
-      const result = await resubmitTimesheet(timesheetId, user.id)
-      if (!result.success) {
-        console.error('Failed to resubmit:', result.error)
-      } else {
-        // Force re-render by reloading (in real app, this would be handled by state management)
-        window.location.reload()
-      }
-    } finally {
-      setActionLoading(null)
-    }
-  }
-
-  // Format time for display
+  // Formatting functions
   const formatTime = (date: Date, includeSeconds: boolean = false) => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -254,7 +209,6 @@ export function AttendanceTracker() {
     })
   }
 
-  // Live current time display
   const formatLiveTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
       hour: '2-digit',
@@ -264,14 +218,13 @@ export function AttendanceTracker() {
     })
   }
 
-  // Format duration in minutes to hours:minutes
   const formatDuration = (minutes: number) => {
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return `${hours}h ${mins}m`
   }
 
-  // Get day type display info
+  // Display info functions
   const getDayTypeInfo = () => {
     switch (dayType) {
       case 'loa':
@@ -304,7 +257,6 @@ export function AttendanceTracker() {
     }
   }
 
-  // Get current status text for workable days
   const getWorkingStatus = () => {
     if (existingTimesheet) {
       switch (existingTimesheet.status) {
@@ -319,7 +271,6 @@ export function AttendanceTracker() {
     return { text: 'Working', color: 'text-green-600 dark:text-green-400' }
   }
 
-  // Get date range for multi-day events
   const getDateRange = () => {
     let startDate, endDate
 
@@ -353,21 +304,7 @@ export function AttendanceTracker() {
     return `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
   }
 
-  const currentWorkedTime = attendanceState.isClocked ? calculateWorkedTime() : attendanceState.totalWorkedMinutes
-
-  // Calculate current break time including ongoing break
-  const getCurrentBreakTime = () => {
-    let totalBreakTime = attendanceState.totalBreakMinutes
-
-    // Add ongoing break time if currently on break
-    if (attendanceState.onBreak && attendanceState.currentBreakStart) {
-      const currentBreakDuration = Math.floor((new Date().getTime() - attendanceState.currentBreakStart.getTime()) / (1000 * 60))
-      totalBreakTime += currentBreakDuration
-    }
-
-    return totalBreakTime
-  }
-
+  // Computed values
   const dayTypeInfo = getDayTypeInfo()
   const workingStatus = getWorkingStatus()
   const dateRange = getDateRange()
@@ -412,63 +349,80 @@ export function AttendanceTracker() {
         {/* Center - Time Stats with Status Below */}
         {shouldShowUI && (
           <div className="flex flex-col items-stretch space-y-3">
-            {/* Time Stats Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            {/* Clock In Time */}
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Clock In
+            {existingTimesheet && !canReadTimesheet ? (
+              /* Limited view for users without read permission */
+              <div className="text-center">
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  Timesheet for Today
+                </div>
+                <div className={`text-sm font-medium ${workingStatus.color}`}>
+                  {workingStatus.text}
+                </div>
+                <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  Limited view - contact administrator for details
+                </div>
               </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {existingTimesheet && existingTimesheet.startTime ?
-                  formatTime(existingTimesheet.startTime) :
-                  attendanceState.clockInTime ? formatTime(attendanceState.clockInTime) : '--:--'
-                }
-              </div>
-            </div>
+            ) : (
+              <>
+                {/* Full Time Stats Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {/* Clock In Time */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Clock In
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {existingTimesheet && existingTimesheet.startTime ?
+                        formatTime(existingTimesheet.startTime) :
+                        attendanceState.clockInTime ? formatTime(attendanceState.clockInTime) : '--:--'
+                      }
+                    </div>
+                  </div>
 
-            {/* Clock Out Time */}
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Clock Out
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {existingTimesheet && existingTimesheet.endTime ?
-                  formatTime(existingTimesheet.endTime) :
-                  attendanceState.isClocked ? 'In Progress' : '--:--'
-                }
-              </div>
-            </div>
+                  {/* Clock Out Time */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Clock Out
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {existingTimesheet && existingTimesheet.endTime ?
+                        formatTime(existingTimesheet.endTime) :
+                        attendanceState.isClocked ? 'In Progress' : '--:--'
+                      }
+                    </div>
+                  </div>
 
-            {/* Worked Time */}
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Worked Time
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {existingTimesheet ?
-                  formatDuration(existingTimesheet.totalMinutes) :
-                  formatDuration(currentWorkedTime)
-                }
-              </div>
-            </div>
+                  {/* Worked Time */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Worked Time
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {existingTimesheet ?
+                        formatDuration(existingTimesheet.totalMinutes) :
+                        formatDuration(currentWorkedTime)
+                      }
+                    </div>
+                  </div>
 
-            {/* Break Time */}
-            <div className="text-center">
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
-                Break Time
-              </div>
-              <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                {existingTimesheet && existingTimesheet.breakMinutes ?
-                  formatDuration(existingTimesheet.breakMinutes) :
-                  formatDuration(getCurrentBreakTime())
-                }
-              </div>
-            </div>
-            </div>
+                  {/* Break Time */}
+                  <div className="text-center">
+                    <div className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">
+                      Break Time
+                    </div>
+                    <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {existingTimesheet && existingTimesheet.breakMinutes ?
+                        formatDuration(existingTimesheet.breakMinutes) :
+                        formatDuration(getCurrentBreakTime())
+                      }
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
-            {/* Breaks - part of the timesheet data group */}
-            {((attendanceState.isClocked && attendanceState.breaks.length > 0) || (existingTimesheet && existingTimesheet.breaks && existingTimesheet.breaks.length > 0)) && (
+            {/* Breaks - part of the timesheet data group - only show if user can read timesheet details */}
+            {canReadTimesheet && ((attendanceState.isClocked && attendanceState.breaks.length > 0) || (existingTimesheet && existingTimesheet.breaks && existingTimesheet.breaks.length > 0)) && (
               <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
                 <div className="flex flex-wrap gap-2 justify-center">
                   {/* Show existing timesheet breaks or current session breaks */}
@@ -508,173 +462,115 @@ export function AttendanceTracker() {
               </div>
             )}
 
-            {/* Working/Timesheet Status - final summary below all timesheet data */}
-            <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
-              <p className={`text-sm font-medium ${workingStatus.color} text-center`}>
-                {workingStatus.text}
-              </p>
-            </div>
+            {/* Working/Timesheet Status - final summary below all timesheet data - only show if can read or actively working */}
+            {(canReadTimesheet || !existingTimesheet) && (
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <p className={`text-sm font-medium ${workingStatus.color} text-center`}>
+                  {workingStatus.text}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {/* Right Side - Action Buttons - show edit/delete for any timesheet, clock buttons only for workable days */}
         {shouldShowUI && (
           <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-            {existingTimesheet && existingTimesheet.status !== 'approved' ? (() => {
-              const canCreate = hasPermission('hr-attendance-manage-owns', 'create')
-              const canUpdate = hasPermission('hr-attendance-manage-owns', 'update')
-              const canDelete = hasPermission('hr-attendance-manage-owns', 'delete')
-              const canApproveOwn = hasPermission('hr-attendance-manage-owns', 'approve')
-              const canRejectOwn = hasPermission('hr-attendance-manage-owns', 'reject')
-              const canApproveOthers = hasPermission('hr-attendance-manage-others', 'approve')
-              const canRejectOthers = hasPermission('hr-attendance-manage-others', 'reject')
+            {/* Timesheet Action Buttons */}
+            {existingTimesheet && (() => {
+              const isApproved = existingTimesheet.status === 'approved'
+              const canUpdate = canReadTimesheet && (isApproved
+                ? hasPermission('hr-attendance-manage-owns', 'update_approved')
+                : hasPermission('hr-attendance-manage-owns', 'update'))
+              const canDelete = isApproved
+                ? hasPermission('hr-attendance-manage-owns', 'delete_approved')
+                : hasPermission('hr-attendance-manage-owns', 'delete')
 
-              const isOwnTimesheet = existingTimesheet.userId === user?.id
-              const canApprove = existingTimesheet.status === 'pending' && (
-                (canApproveOthers && !isOwnTimesheet) || (canApproveOwn && isOwnTimesheet)
-              )
-              const canReject = existingTimesheet.status === 'pending' && (
-                (canRejectOthers && !isOwnTimesheet) || (canRejectOwn && isOwnTimesheet)
-              )
-              const canResubmit = existingTimesheet.status === 'requires_modification' && isOwnTimesheet && canUpdate
-
-              const buttons = []
-
-              // Approval workflow buttons
-              if (canResubmit) {
-                buttons.push(
+              if (canUpdate) {
+                return (
                   <button
-                    key="resubmit"
-                    onClick={() => handleResubmit(existingTimesheet.id)}
-                    disabled={actionLoading === existingTimesheet.id}
-                    className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                    onClick={() => console.log('Edit timesheet:', existingTimesheet.id)}
+                    className="p-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                     </svg>
-                    {actionLoading === existingTimesheet.id ? <span>...</span> : <span>Resubmit</span>}
                   </button>
                 )
               }
 
-              if (canApprove) {
-                buttons.push(
+              if (canDelete) {
+                return (
                   <button
-                    key="approve"
-                    onClick={() => handleApprove(existingTimesheet.id)}
-                    disabled={actionLoading === existingTimesheet.id}
-                    className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="p-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
-                    {actionLoading === existingTimesheet.id ? <span>...</span> : <span>Approve</span>}
                   </button>
                 )
               }
 
-              if (canReject) {
-                buttons.push(
-                  <button
-                    key="reject"
-                    onClick={() => handleReject(existingTimesheet.id)}
-                    disabled={actionLoading === existingTimesheet.id}
-                    className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                    {actionLoading === existingTimesheet.id ? <span>...</span> : <span>Reject</span>}
-                  </button>
-                )
-              }
+              return null
+            })()}
 
-              // Traditional edit/delete buttons (if no approval buttons available)
-              if (buttons.length === 0) {
-                // If only has delete permission, show delete button
-                if (canDelete && !canCreate && !canUpdate) {
-                  buttons.push(
-                    <button
-                      key="delete"
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="p-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )
-                }
-
-                // If has create or update permission, show edit button
-                if (canCreate || canUpdate) {
-                  buttons.push(
-                    <button
-                      key="edit"
-                      onClick={() => console.log('Edit timesheet:', existingTimesheet.id)}
-                      className="p-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                  )
-                }
-              }
-
-              return buttons.length > 0 ? <>{buttons}</> : null
-            })() : canWork && !attendanceState.isClocked ? (
-            <button
-              onClick={handleClockIn}
-              className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
-            >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <span>Clock In</span>
-            </button>
-          ) : canWork ? (
-            <>
-              {!attendanceState.onBreak ? (
-                <button
-                  onClick={handleStartBreak}
-                  className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
-                  </svg>
-                  <span>Start Break</span>
-                </button>
-              ) : (
-                <button
-                  onClick={handleEndBreak}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M6 4h4v16H6V4zM14 4l8 8-8 8V4z" />
-                  </svg>
-                  <span>End Break</span>
-                </button>
-              )}
-
-              {/* Clock Out button - disabled when on break */}
+            {/* Clock In Button */}
+            {canWork && !attendanceState.isClocked && !existingTimesheet && (
               <button
-                onClick={attendanceState.onBreak ? undefined : handleClockOut}
-                disabled={attendanceState.onBreak}
-                className={`px-6 py-3 font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 ${
-                  attendanceState.onBreak
-                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                    : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
-                }`}
-                title={attendanceState.onBreak ? 'End your break before clocking out' : 'Clock Out'}
+                onClick={handleClockIn}
+                className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
               >
                 <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M6 6h12v12H6z" />
+                  <path d="M8 5v14l11-7z" />
                 </svg>
-                <span>Clock Out</span>
+                <span>Clock In</span>
               </button>
-            </>
-          ) : null}
+            )}
+
+            {/* Break and Clock Out Buttons */}
+            {canWork && attendanceState.isClocked && !existingTimesheet && (
+              <>
+                {!attendanceState.onBreak ? (
+                  <button
+                    onClick={handleStartBreak}
+                    className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z" />
+                    </svg>
+                    <span>Start Break</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleEndBreak}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 cursor-pointer"
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6V4zM14 4l8 8-8 8V4z" />
+                    </svg>
+                    <span>End Break</span>
+                  </button>
+                )}
+
+                {/* Clock Out button - disabled when on break */}
+                <button
+                  onClick={attendanceState.onBreak ? undefined : handleClockOut}
+                  disabled={attendanceState.onBreak}
+                  className={`px-6 py-3 font-medium rounded-lg transition-colors duration-200 flex items-center justify-center space-x-2 ${
+                    attendanceState.onBreak
+                      ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+                      : 'bg-red-600 hover:bg-red-700 text-white cursor-pointer'
+                  }`}
+                  title={attendanceState.onBreak ? 'End your break before clocking out' : 'Clock Out'}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M6 6h12v12H6z" />
+                  </svg>
+                  <span>Clock Out</span>
+                </button>
+              </>
+            )}
           </div>
         )}
       </div>
