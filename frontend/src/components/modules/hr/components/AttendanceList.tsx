@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { dummyUsers } from '@/data/dummy/users'
-import type { User } from '@/shared/types'
+import type { User, UserStatus } from '@/shared/types'
 import { getTimesheetsWithEmployeeNames, dummyVacations, dummyLOAs, dummyPublicHolidays, dummyClosingDays, dummySchedules } from '@/data/dummy/hr'
 import type { Timesheet } from '@/shared/types/hr'
 import { useDrawer, useAuth } from '@/shared/contexts'
@@ -14,7 +14,7 @@ import { usePermissions } from '@/shared/hooks/usePermissions'
 import { approveTimesheet, requestTimesheetChanges } from '@/shared/utils/timesheetActions'
 
 // Types
-type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed' | 'off_schedule'
+type AttendanceStatus = 'present' | 'absent' | 'vacation' | 'loa' | 'holiday' | 'closed' | 'off_schedule' | 'not_employed' | 'suspended'
 
 interface AttendanceListProps {
   className?: string
@@ -40,12 +40,14 @@ const STATUS_CONFIG = {
   loa: { label: 'Leave of Absence', color: 'text-purple-600 dark:text-purple-400', bgColor: 'bg-purple-100 dark:bg-purple-900/20' },
   holiday: { label: 'Public Holiday', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
   closed: { label: 'Office Closed', color: 'text-blue-600 dark:text-blue-400', bgColor: 'bg-blue-100 dark:bg-blue-900/20' },
-  off_schedule: { label: 'Off Schedule', color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-900/20' }
+  off_schedule: { label: 'Off Schedule', color: 'text-gray-600 dark:text-gray-400', bgColor: 'bg-gray-100 dark:bg-gray-900/20' },
+  not_employed: { label: 'Not Employed', color: 'text-gray-500 dark:text-gray-500', bgColor: 'bg-gray-50 dark:bg-gray-900/10' },
+  suspended: { label: 'Suspended', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/20' }
 }
 
 // Timesheet status configuration
 const TIMESHEET_STATUS_CONFIG = {
-  pending: { label: 'Pending Review', color: 'text-orange-600 dark:text-orange-400', bgColor: 'bg-orange-100 dark:bg-orange-900/20' },
+  pending: { label: 'Pending Review', color: 'text-yellow-700 dark:text-yellow-400', bgColor: 'bg-yellow-100 dark:bg-yellow-900/20' },
   approved: { label: 'Approved', color: 'text-green-600 dark:text-green-400', bgColor: 'bg-green-100 dark:bg-green-900/20' },
   requires_modification: { label: 'Needs Changes', color: 'text-red-600 dark:text-red-400', bgColor: 'bg-red-100 dark:bg-red-900/20' }
 } as const
@@ -64,6 +66,27 @@ const isDateInRange = (date: Date, startDate: Date, endDate?: Date): boolean => 
   const normalizedEnd = endDate ? normalizeDate(endDate) : normalizedStart
 
   return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd
+}
+
+const getUserEmploymentStatusForDate = (user: User, date: Date): UserStatus | null => {
+  const normalizedDate = normalizeDate(date)
+
+  // Sort employment history by date (newest first)
+  const sortedHistory = [...user.employmentHistory].sort((a, b) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+
+  // Find the most recent employment event on or before the given date
+  const relevantEvent = sortedHistory.find(event =>
+    normalizeDate(new Date(event.date)) <= normalizedDate
+  )
+
+  if (!relevantEvent) {
+    // No employment history before this date - user hasn't started yet
+    return 'pending_start'
+  }
+
+  return relevantEvent.status
 }
 
 // Action Button Component
@@ -130,13 +153,27 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
     // If user can only read their own attendance, only show current user
     const availableUsers = canReadOthers ? dummyUsers : (currentUser ? [currentUser] : [])
 
-    if (!userSearchQuery.trim()) return availableUsers
+    let filteredList: User[]
+    if (!userSearchQuery.trim()) {
+      filteredList = availableUsers
+    } else {
+      const searchTerm = userSearchQuery.toLowerCase().trim()
+      filteredList = availableUsers.filter(user =>
+        `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm) ||
+        user.email.toLowerCase().includes(searchTerm)
+      )
+    }
 
-    const searchTerm = userSearchQuery.toLowerCase().trim()
-    return availableUsers.filter(user =>
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm) ||
-      user.email.toLowerCase().includes(searchTerm)
-    )
+    // Put current user at the top of the list if they're in the filtered results
+    if (currentUser && canReadOthers) {
+      const currentUserInList = filteredList.find(user => user.id === currentUser.id)
+      if (currentUserInList) {
+        const otherUsers = filteredList.filter(user => user.id !== currentUser.id)
+        return [currentUserInList, ...otherUsers]
+      }
+    }
+
+    return filteredList
   }, [userSearchQuery, canReadOthers, currentUser])
 
   const dateRangeArray = useMemo(() => {
@@ -194,15 +231,27 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
       const dayOfWeek = date.getDay()
       const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === dayOfWeek) || false
 
-      // Determine status and work expectation (priority order: LOA > off schedule > holiday > closing > vacation)
+      // Check employment status for this date first
+      const employmentStatus = getUserEmploymentStatusForDate(selectedUser, date)
+
+      // Determine status and work expectation (priority order: Employment status > LOA > off schedule > holiday > closing > vacation)
       const { status, isExpectedWorkDay } = (() => {
+        // Handle employment status first
+        if (employmentStatus === 'pending_start' || employmentStatus === 'terminated') {
+          return { status: 'not_employed' as AttendanceStatus, isExpectedWorkDay: false }
+        }
+        if (employmentStatus === 'suspended') {
+          return { status: 'suspended' as AttendanceStatus, isExpectedWorkDay: false }
+        }
+
+        // For active/probation employees, check other statuses
         if (loa) return { status: 'loa' as AttendanceStatus, isExpectedWorkDay: false }
         if (!isScheduledWorkDay) return { status: 'off_schedule' as AttendanceStatus, isExpectedWorkDay: false }
         if (holiday) return { status: 'holiday' as AttendanceStatus, isExpectedWorkDay: false }
         if (closing) return { status: 'closed' as AttendanceStatus, isExpectedWorkDay: false }
         if (vacation) return { status: 'vacation' as AttendanceStatus, isExpectedWorkDay: false }
 
-        // This is a scheduled work day with no time-off
+        // This is a scheduled work day with no time-off for an employed user
         const today = normalizeDate(new Date())
         const currentDate = normalizeDate(date)
 
@@ -347,6 +396,18 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
     // TODO: Implement edit functionality (Phase 9+)
   }, [])
 
+  const handleCreateTimesheet = useCallback(async (userId: string, date: Date, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Create timesheet for user:', userId, 'on date:', date)
+    // TODO: Implement create timesheet functionality (Phase 9+)
+  }, [])
+
+  const handleRequestTimesheet = useCallback(async (userId: string, date: Date, e: React.MouseEvent) => {
+    e.stopPropagation()
+    console.log('Request timesheet for user:', userId, 'on date:', date)
+    // TODO: Implement request timesheet functionality (Phase 9+)
+  }, [])
+
 
   // Helper functions
   const getStatusDisplay = (record: AttendanceRecord) => {
@@ -484,15 +545,21 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                 {showUserDropdown && (
                   <div className="absolute z-20 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto">
                     {filteredUsers.length > 0 ? (
-                      filteredUsers.map(user => (
-                        <button
-                          key={user.id}
-                          onClick={() => handleUserSelect(user)}
-                          className={`w-full text-left px-3 py-2 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-between transition-colors ${
-                            selectedUser?.id === user.id
-                              ? 'bg-blue-50 dark:bg-blue-900/50'
-                              : ''
-                          }`}
+                      filteredUsers.map(user => {
+                        const isCurrentUser = user.id === currentUser?.id
+                        const isSelected = selectedUser?.id === user.id
+
+                        return (
+                          <button
+                            key={user.id}
+                            onClick={() => handleUserSelect(user)}
+                            className={`w-full text-left px-3 py-2 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center justify-between transition-colors ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/50'
+                                : isCurrentUser
+                                ? 'bg-green-50 dark:bg-green-900/20 border-l-2 border-green-500'
+                                : ''
+                            }`}
                         >
                           <div className="flex items-center space-x-3">
                             <Avatar
@@ -510,13 +577,19 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                               </div>
                             </div>
                           </div>
-                          {selectedUser?.id === user.id && (
-                            <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
+                          <div className="flex items-center space-x-2">
+                            {isCurrentUser && !isSelected && (
+                              <span className="text-xs text-green-600 dark:text-green-400 font-medium">(You)</span>
+                            )}
+                            {isSelected && (
+                              <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
                         </button>
-                      ))
+                        )
+                      })
                     ) : (
                       <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-sm text-center">
                         No employees found
@@ -562,30 +635,9 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
         ) : (
           <div>
 
-            {/* Table-style list */}
+            {/* Single Responsive Grid View */}
             <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
-              {/* Table Header */}
-              <div className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-                <div className="grid grid-cols-5 gap-4 px-4 py-3">
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-start">
-                    Date
-                  </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
-                    Status
-                  </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
-                    Entry / Exit
-                  </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-center">
-                    Hours
-                  </div>
-                  <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider flex justify-end">
-                    Actions
-                  </div>
-                </div>
-              </div>
-
-              {/* Table Body */}
+              {/* Data Rows */}
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {paginatedRecords.map((record, index) => {
                   const statusDisplay = getStatusDisplay(record)
@@ -596,22 +648,45 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                   const isOwnTimesheet = record.timesheet?.userId === currentUser?.id
                   const permissionType = isOwnTimesheet ? 'hr-attendance-manage-owns' : 'hr-attendance-manage-others'
                   const canReadTimesheet = hasPermission(permissionType, 'read')
+
+                  // Check if user was employed on this date for action permissions
+                  const userEmploymentStatus = selectedUser ? getUserEmploymentStatusForDate(selectedUser, record.date) : null
+                  const isUserEmployed = userEmploymentStatus && !['pending_start', 'terminated', 'suspended'].includes(userEmploymentStatus)
+
                   const isClickable = !!record.timesheet && canReadTimesheet
                   const isApproved = record.timesheet?.status === 'approved'
                   const isChangeRequired = record.timesheet?.status === 'requires_modification'
                   const isPending = record.timesheet?.status === 'pending' || isChangeRequired
 
-                  const canApprove = isPending && hasPermission(permissionType, 'approve')
-                  const canRequestChanges = isPending && hasPermission(permissionType, 'request_changes') && !isChangeRequired
-                  const canDelete = hasPermission(permissionType, isApproved ? 'delete_approved' : 'delete')
-                  const canEdit = canReadTimesheet && hasPermission(permissionType, isApproved ? 'update_approved' : 'update')
+                  // Disable actions for non-employed or suspended users
+                  const canApprove = isPending && hasPermission(permissionType, 'approve') && isUserEmployed
+                  const canRequestChanges = isPending && hasPermission(permissionType, 'request_changes') && !isChangeRequired && isUserEmployed
+                  const canDelete = hasPermission(permissionType, isApproved ? 'delete_approved' : 'delete') && isUserEmployed
+                  const canEdit = canReadTimesheet && hasPermission(permissionType, isApproved ? 'update_approved' : 'update') && isUserEmployed
 
+                  // For workable days without timesheets - create/request buttons
+                  // Optional work days: all days except vacation and LOA (when user is employed)
+                  // Use underlying vacation/LOA status, not displayed status (due to priority system)
+                  const hasUnderlyingVacation = dummyVacations.find(v =>
+                    v.userId === selectedUser.id &&
+                    v.status === 'approved' &&
+                    isDateInRange(record.date, v.startDate, v.endDate)
+                  )
+                  const hasUnderlyingLOA = dummyLOAs.find(l =>
+                    l.userId === selectedUser.id &&
+                    l.status === 'approved' &&
+                    isDateInRange(record.date, l.startDate, l.endDate)
+                  )
+                  const isWorkableDay = !record.timesheet && isUserEmployed &&
+                    !hasUnderlyingVacation && !hasUnderlyingLOA
+                  const canCreateTimesheet = isWorkableDay && hasPermission(permissionType, 'create')
+                  const canRequestTimesheet = isWorkableDay && !isOwnTimesheet && hasPermission('hr-attendance-manage-others', 'request_changes')
 
                   return (
                     <div
                       key={index}
                       onClick={isClickable ? () => handleTimesheetClick(record.timesheet!) : undefined}
-                      className={`grid grid-cols-5 gap-4 px-6 py-3 transition-colors ${
+                      className={`sm:grid sm:grid-cols-[auto_auto_auto_1fr] xl:grid-cols-[auto_auto_auto_auto_1fr] sm:gap-8 flex flex-col gap-2 px-3 py-3 transition-colors ${
                         isToday
                           ? 'bg-blue-200 dark:bg-blue-900/60 relative'
                           : isGrayedOut
@@ -628,27 +703,29 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                       {isToday && (
                         <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
                       )}
-                      {/* Date Column */}
-                      <div className="flex flex-col items-start">
-                        <div className="font-medium text-gray-900 dark:text-white text-sm">
-                          {formatDateForList(record.date)}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {formatDayOfWeek(record.date)}
-                        </div>
-                      </div>
 
-                      {/* Status Column */}
-                      <div className="flex flex-col justify-center items-center">
-                        <div className="flex items-center space-x-2">
+                      {/* Row 1: Date (left) + Status (right) - Only on small screens */}
+                      <div className="sm:hidden flex justify-between items-center w-full">
+                        {/* Date */}
+                        <div className="flex flex-col items-start">
+                          <div className="font-medium text-gray-900 dark:text-white text-sm whitespace-nowrap">
+                            {formatDateForList(record.date)}
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                            {formatDayOfWeek(record.date)}
+                          </div>
+                        </div>
+
+                        {/* Status - stacked on right */}
+                        <div className="flex flex-col items-end">
                           {!statusDisplay.showNothing && (
                             <>
                               {statusDisplay.hasDualStatus && (
-                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusDisplay.secondaryColor} ${statusDisplay.secondaryBgColor}`}>
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusDisplay.secondaryColor} ${statusDisplay.secondaryBgColor} mb-1`}>
                                   {statusDisplay.secondaryLabel}
                                 </span>
                               )}
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${statusDisplay.primaryColor} ${statusDisplay.primaryBgColor}`}>
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusDisplay.primaryColor} ${statusDisplay.primaryBgColor}`}>
                                 {statusDisplay.primaryLabel}
                               </span>
                             </>
@@ -656,20 +733,125 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                         </div>
                       </div>
 
-                      {/* Entry / Exit Column */}
-                      <div className="flex flex-col justify-center items-center">
+                      {/* Date Column - Hidden on small screens, visible sm+ */}
+                      <div className="hidden sm:flex flex-col items-start">
+                        <div className="font-medium text-gray-900 dark:text-white text-sm whitespace-nowrap">
+                          {formatDateForList(record.date)}
+                        </div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                          {formatDayOfWeek(record.date)}
+                        </div>
+                      </div>
+
+                      {/* Status Column - Hidden on small screens, visible sm+ */}
+                      <div className="hidden sm:flex flex-col justify-center items-center">
+                        <div className="flex xl:flex-row flex-col xl:items-center items-center xl:space-x-2 space-y-1 xl:space-y-0">
+                          {!statusDisplay.showNothing && (
+                            <>
+                              {statusDisplay.hasDualStatus && (
+                                <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusDisplay.secondaryColor} ${statusDisplay.secondaryBgColor}`}>
+                                  {statusDisplay.secondaryLabel}
+                                </span>
+                              )}
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${statusDisplay.primaryColor} ${statusDisplay.primaryBgColor}`}>
+                                {statusDisplay.primaryLabel}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 2: Entry/Exit times and Hours (side by side, wrapping when no space) - Only on screens smaller than sm */}
+                      {record.timesheet && (
+                        <div className="sm:hidden flex flex-wrap justify-center items-center gap-x-5 gap-y-2 w-full mb-3 mt-2">
+                          {canReadTimesheet ? (
+                            <>
+                          {/* Entry/Exit Times */}
+                          <div className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center">
+                            <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {record.timesheet.startTime && record.timesheet.endTime ? (
+                              `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(record.timesheet.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                            ) : record.timesheet.startTime ? (
+                              `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - In Progress`
+                            ) : (
+                              'Incomplete'
+                            )}
+                          </div>
+
+                          {/* Hours */}
+                          {record.hours && (
+                            <div className="flex items-center space-x-4">
+                              <div className="font-medium text-gray-700 dark:text-gray-300 text-sm flex items-center">
+                                <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                  <line x1="4" y1="12" x2="20" y2="12" strokeWidth={1} />
+                                </svg>
+                                {Math.floor(record.timesheet.totalMinutes / 60)}h {record.timesheet.totalMinutes % 60}m
+                              </div>
+                              {record.breaks !== undefined && record.breaks > 0 && (
+                                <div className="text-gray-600 dark:text-gray-400 text-sm flex items-center">
+                                  <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12v12H6z" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 11h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5v1M12 5v1M15 5v1" />
+                                  </svg>
+                                  {Math.floor(record.timesheet.breakMinutes / 60)}h {record.timesheet.breakMinutes % 60}m
+                                </div>
+                              )}
+                            </div>
+                          )}
+                            </>
+                          ) : (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 italic">
+                              Limited access
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Entry/Exit & Hours Column - Hidden on small screens, visible sm+ */}
+                      <div className="hidden sm:flex flex-col justify-center items-center">
                         {record.timesheet ? (
                           canReadTimesheet ? (
-                            <div className="font-medium text-lg text-gray-700 dark:text-gray-300 flex items-center">
-                              <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              {record.timesheet.startTime && record.timesheet.endTime ? (
-                                `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(record.timesheet.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
-                              ) : record.timesheet.startTime ? (
-                                `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - In Progress`
-                              ) : (
-                                'Incomplete'
+                            <div>
+                              {/* Entry/Exit Times - Show on xl+, or show with hours below on lg- */}
+                              <div className="font-medium text-sm text-gray-700 dark:text-gray-300 flex items-center whitespace-nowrap xl:justify-center justify-center">
+                                <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                {record.timesheet.startTime && record.timesheet.endTime ? (
+                                  `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(record.timesheet.endTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}`
+                                ) : record.timesheet.startTime ? (
+                                  `${new Date(record.timesheet.startTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })} - In Progress`
+                                ) : (
+                                  'Incomplete'
+                                )}
+                              </div>
+
+                              {/* Hours - Show on lg and below, hide on xl+ */}
+                              {record.hours && (
+                                <div className="xl:hidden flex items-center space-x-4 whitespace-nowrap justify-center mt-2">
+                                  <div className="font-medium text-gray-700 dark:text-gray-300 text-sm flex items-center">
+                                    <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" />
+                                      <line x1="4" y1="12" x2="20" y2="12" strokeWidth={1} />
+                                    </svg>
+                                    {Math.floor(record.timesheet!.totalMinutes / 60)}h {record.timesheet!.totalMinutes % 60}m
+                                  </div>
+                                  {record.breaks !== undefined && record.breaks > 0 && (
+                                    <div className="text-gray-600 dark:text-gray-400 text-sm flex items-center">
+                                      <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12v12H6z" />
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 11h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2" />
+                                      </svg>
+                                      {Math.floor(record.timesheet!.breakMinutes / 60)}h {record.timesheet!.breakMinutes % 60}m
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           ) : (
@@ -677,18 +859,16 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                               Limited access
                             </div>
                           )
-                        ) : (
-                          <div className="text-base text-gray-400 dark:text-gray-500"></div>
-                        )}
+                        ) : null}
                       </div>
 
-                      {/* Hours Column */}
-                      <div className="flex flex-col justify-center items-center">
+                      {/* Hours Column - Only visible on xl+ */}
+                      <div className="hidden xl:flex flex-col justify-center items-center">
                         {record.timesheet && record.hours ? (
                           canReadTimesheet ? (
-                            <div className="flex items-center justify-start space-x-4">
-                              <div className="font-medium text-gray-700 dark:text-gray-300 text-lg flex items-center">
-                                <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div className="flex xl:flex-row flex-col xl:items-center xl:space-x-4 space-y-1 xl:space-y-0 whitespace-nowrap">
+                              <div className="font-medium text-gray-700 dark:text-gray-300 text-sm flex items-center">
+                                <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <rect x="4" y="8" width="16" height="12" rx="2" strokeWidth={2} />
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 8V6a2 2 0 012-2h4a2 2 0 012 2v2" />
                                   <line x1="4" y1="12" x2="20" y2="12" strokeWidth={1} />
@@ -696,8 +876,8 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                                 {Math.floor(record.timesheet!.totalMinutes / 60)}h {record.timesheet!.totalMinutes % 60}m
                               </div>
                               {record.breaks !== undefined && record.breaks > 0 && (
-                                <div className="text-gray-600 dark:text-gray-400 text-lg flex items-center">
-                                  <svg className="w-5 h-5 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div className="text-gray-600 dark:text-gray-400 text-sm flex items-center">
+                                  <svg className="w-4 h-4 mr-1 text-gray-500 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12v12H6z" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 11h2c1 0 2 1 2 2v2c0 1-1 2-2 2h-2" />
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5v1M12 5v1M15 5v1" />
@@ -711,16 +891,15 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                               Limited access
                             </div>
                           )
-                        ) : (
-                          <div className="text-sm text-gray-400 dark:text-gray-500"></div>
-                        )}
+                        ) : null}
                       </div>
 
-                      {/* Actions Column */}
-                      <div className="flex flex-col justify-center items-end">
-                        {record.timesheet && (canApprove || canRequestChanges || canDelete || canEdit) && (
-                          <div className="flex items-center space-x-1 justify-end pointer-events-auto">
-                            {canApprove && (
+                      {/* Row 3: Action buttons (aligned right) - Only on small screens */}
+                      <div className="sm:hidden flex justify-end items-center w-full">
+                        {((record.timesheet && (canApprove || canRequestChanges || canDelete || canEdit)) || canCreateTimesheet || canRequestTimesheet) && (
+                          <div className="flex items-center space-x-1 pointer-events-auto">
+                            {/* Timesheet-related actions - only show when timesheet exists */}
+                            {record.timesheet && canApprove && (
                               <ActionButton
                                 onClick={(e) => handleApprove(record.timesheet!.id, e)}
                                 className="text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
@@ -731,18 +910,19 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                                 </svg>
                               </ActionButton>
                             )}
-                            {canRequestChanges && (
+                            {record.timesheet && canRequestChanges && (
                               <ActionButton
                                 onClick={(e) => handleRequestChanges(record.timesheet!.id, e)}
                                 className="text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
                                 title="Request changes"
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16c0-2.5 1.8-4 4-4h3m0 0l-2-2m2 2l-2 2" />
                                 </svg>
                               </ActionButton>
                             )}
-                            {canEdit && (
+                            {record.timesheet && canEdit && (
                               <ActionButton
                                 onClick={(e) => handleEdit(record.timesheet!.id, e)}
                                 className="text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
@@ -753,7 +933,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                                 </svg>
                               </ActionButton>
                             )}
-                            {canDelete && (
+                            {record.timesheet && canDelete && (
                               <ActionButton
                                 onClick={(e) => handleDelete(record.timesheet!.id, e)}
                                 className="text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
@@ -761,6 +941,108 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                               >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {/* Create/Request actions - only show when no timesheet exists */}
+                            {canCreateTimesheet && (
+                              <ActionButton
+                                onClick={(e) => handleCreateTimesheet(record.userId, record.date, e)}
+                                className="text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                title="Create timesheet"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {canRequestTimesheet && (
+                              <ActionButton
+                                onClick={(e) => handleRequestTimesheet(record.userId, record.date, e)}
+                                className="text-white bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+                                title="Request timesheet"
+                              >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16c0-2.5 1.8-4 4-4h3m0 0l-2-2m2 2l-2 2" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Actions Column - Hidden on small screens, visible sm+ */}
+                      <div className="hidden sm:flex justify-end items-center">
+                        {((record.timesheet && (canApprove || canRequestChanges || canDelete || canEdit)) || canCreateTimesheet || canRequestTimesheet) && (
+                          <div className="flex items-center space-x-1 pointer-events-auto">
+                            {/* Timesheet-related actions - only show when timesheet exists */}
+                            {record.timesheet && canApprove && (
+                              <ActionButton
+                                onClick={(e) => handleApprove(record.timesheet!.id, e)}
+                                className="text-white bg-green-500 hover:bg-green-600 dark:bg-green-600 dark:hover:bg-green-700"
+                                title="Approve timesheet"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {record.timesheet && canRequestChanges && (
+                              <ActionButton
+                                onClick={(e) => handleRequestChanges(record.timesheet!.id, e)}
+                                className="text-white bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700"
+                                title="Request changes"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16c0-2.5 1.8-4 4-4h3m0 0l-2-2m2 2l-2 2" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {record.timesheet && canEdit && (
+                              <ActionButton
+                                onClick={(e) => handleEdit(record.timesheet!.id, e)}
+                                className="text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                title="Edit timesheet"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {record.timesheet && canDelete && (
+                              <ActionButton
+                                onClick={(e) => handleDelete(record.timesheet!.id, e)}
+                                className="text-white bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700"
+                                title="Delete timesheet"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {/* Create/Request actions - only show when no timesheet exists */}
+                            {canCreateTimesheet && (
+                              <ActionButton
+                                onClick={(e) => handleCreateTimesheet(record.userId, record.date, e)}
+                                className="text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                title="Create timesheet"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                                </svg>
+                              </ActionButton>
+                            )}
+                            {canRequestTimesheet && (
+                              <ActionButton
+                                onClick={(e) => handleRequestTimesheet(record.userId, record.date, e)}
+                                className="text-white bg-purple-500 hover:bg-purple-600 dark:bg-purple-600 dark:hover:bg-purple-700"
+                                title="Request timesheet"
+                              >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 16c0-2.5 1.8-4 4-4h3m0 0l-2-2m2 2l-2 2" />
                                 </svg>
                               </ActionButton>
                             )}

@@ -43,9 +43,9 @@ export const USER_STATUS_CONFIG = {
   },
   suspended: {
     label: 'Suspended',
-    textColor: 'text-red-600 dark:text-red-400',
-    bgColor: 'bg-red-100 dark:bg-red-900/20',
-    badgeColor: 'red'
+    textColor: 'text-orange-600 dark:text-orange-400',
+    bgColor: 'bg-orange-100 dark:bg-orange-900/20',
+    badgeColor: 'orange'
   },
   pending_start: {
     label: 'Pending Start',

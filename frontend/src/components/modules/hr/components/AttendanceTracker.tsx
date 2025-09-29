@@ -5,6 +5,7 @@ import { useAuth } from '@/shared/contexts'
 import { usePermissions } from '@/shared/hooks'
 import { dummyTimesheets, dummyVacations, dummyLOAs, dummyPublicHolidays, dummyClosingDays, dummySchedules } from '@/data/dummy/hr'
 import { approveTimesheet } from '@/shared/utils/timesheetActions'
+import type { UserStatus } from '@/shared/types'
 
 interface AttendanceState {
   isClocked: boolean
@@ -19,6 +20,32 @@ interface AttendanceState {
     endTime?: Date
     duration: number
   }>
+}
+
+// Helper functions
+const normalizeDate = (date: Date): Date => {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+const getUserEmploymentStatusForDate = (user: any, date: Date): UserStatus | null => {
+  const normalizedDate = normalizeDate(date)
+
+  // Sort employment history by date (newest first)
+  const sortedHistory = [...user.employmentHistory].sort((a: any, b: any) =>
+    new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
+
+  // Find the most recent employment event on or before the given date
+  const relevantEvent = sortedHistory.find((event: any) =>
+    normalizeDate(new Date(event.date)) <= normalizedDate
+  )
+
+  if (!relevantEvent) {
+    // No employment history before this date - user hasn't started yet
+    return 'pending_start'
+  }
+
+  return relevantEvent.status
 }
 
 export function AttendanceTracker() {
@@ -86,8 +113,13 @@ export function AttendanceTracker() {
   const userSchedule = user ? dummySchedules.find(schedule => schedule.id === user.assignedScheduleId) : null
   const isScheduledWorkDay = userSchedule?.weekSchedule.some(scheduleDay => scheduleDay.dayOfWeek === todayDayOfWeek) || false
 
-  // Determine day type (priority order: LOA > off schedule > holiday > closing > vacation)
-  const dayType = approvedLOA ? 'loa' :
+  // Check employment status for today
+  const employmentStatus = user ? getUserEmploymentStatusForDate(user, today) : null
+
+  // Determine day type (priority order: Employment status > LOA > off schedule > holiday > closing > vacation)
+  const dayType = (!employmentStatus || ['pending_start', 'terminated'].includes(employmentStatus)) ? 'not_employed' :
+                 employmentStatus === 'suspended' ? 'suspended' :
+                 approvedLOA ? 'loa' :
                  !isScheduledWorkDay ? 'off_schedule' :
                  publicHoliday ? 'holiday' :
                  closingDay ? 'closing' :
@@ -95,8 +127,18 @@ export function AttendanceTracker() {
                  'normal'
 
   // Determine if user can work today
-  const canWork = !approvedLOA && !closingDay && !approvedVacation
-  const shouldShowUI = canWork || !!existingTimesheet
+  const canWork = employmentStatus &&
+                 !['pending_start', 'terminated', 'suspended'].includes(employmentStatus) &&
+                 !approvedLOA && !closingDay && !approvedVacation
+
+  // Determine if user was employed on the date of existing timesheet
+  const wasEmployedForTimesheet = existingTimesheet && user ? (() => {
+    const timesheetEmploymentStatus = getUserEmploymentStatusForDate(user, new Date(existingTimesheet.date))
+    return timesheetEmploymentStatus && !['pending_start', 'terminated', 'suspended'].includes(timesheetEmploymentStatus)
+  })() : false
+
+  // Only show UI if user can work today OR if they have a timesheet AND were employed when it was created
+  const shouldShowUI = canWork || (!!existingTimesheet && wasEmployedForTimesheet)
 
   // Permission checks
   const canReadTimesheet = hasPermission('hr-attendance-manage-owns', 'read')
@@ -228,6 +270,16 @@ export function AttendanceTracker() {
   // Display info functions
   const getDayTypeInfo = () => {
     switch (dayType) {
+      case 'not_employed':
+        return {
+          label: employmentStatus === 'pending_start' ? 'Not Started Yet' : 'Employment Terminated',
+          color: 'text-gray-500 dark:text-gray-500'
+        }
+      case 'suspended':
+        return {
+          label: 'Suspended',
+          color: 'text-orange-600 dark:text-orange-400'
+        }
       case 'loa':
         return {
           label: `${approvedLOA?.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())} Leave`,
@@ -480,13 +532,15 @@ export function AttendanceTracker() {
             {/* Timesheet Action Buttons */}
             {existingTimesheet && (() => {
               const isApproved = existingTimesheet.status === 'approved'
-              const canUpdate = canReadTimesheet && (isApproved
+              const isUserEmployed = employmentStatus && !['pending_start', 'terminated', 'suspended'].includes(employmentStatus)
+
+              const canUpdate = canReadTimesheet && isUserEmployed && (isApproved
                 ? hasPermission('hr-attendance-manage-owns', 'update_approved')
                 : hasPermission('hr-attendance-manage-owns', 'update'))
-              const canDelete = canReadTimesheet && (isApproved
+              const canDelete = canReadTimesheet && isUserEmployed && (isApproved
                 ? hasPermission('hr-attendance-manage-owns', 'delete_approved')
                 : hasPermission('hr-attendance-manage-owns', 'delete'))
-              const canApprove = canReadTimesheet && !isApproved && hasPermission('hr-attendance-manage-owns', 'approve')
+              const canApprove = canReadTimesheet && !isApproved && isUserEmployed && hasPermission('hr-attendance-manage-owns', 'approve')
 
               const buttons = []
 

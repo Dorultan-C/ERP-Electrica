@@ -15,7 +15,7 @@ const employmentHistoryEvents: EmploymentHistoryEvent[] = [
   {
     id: "eh2",
     status: "active",
-    date: new Date("2023-06-01"),
+    date: new Date("2025-05-30"),
     notes: "Promoted to Senior Frontend Developer"
   },
   {

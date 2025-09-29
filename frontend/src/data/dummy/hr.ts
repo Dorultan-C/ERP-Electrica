@@ -57,7 +57,7 @@ export const dummyVacations: Vacation[] = [
     id: "vac-002",
     userId: "user-002",
     startDate: new Date("2025-09-08"),
-    endDate: new Date("2025-09-25"),
+    endDate: new Date("2025-09-19"),
     days: 5,
     status: "approved",
     requestedAt: new Date("2024-01-10T14:20:00Z"),
@@ -143,7 +143,7 @@ export const dummyTimesheets: Timesheet[] = [
   {
     id: "ts-001",
     userId: "user-002",
-    date: new Date("2025-09-26"),
+    date: new Date("2025-09-29"),
     startTime: new Date("2025-09-25T09:00:00Z"),
     endTime: new Date("2025-09-25T17:30:00Z"),
     breaks: [dummyBreaks[0]!, dummyBreaks[1]!],
@@ -151,7 +151,7 @@ export const dummyTimesheets: Timesheet[] = [
     regularMinutes: 435,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "approved",
+    status: "pending",
     reviewedBy: "user-002",
     reviewedAt: new Date("2024-01-23T10:00:00Z")
   },
