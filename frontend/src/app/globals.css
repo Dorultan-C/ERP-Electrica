@@ -75,3 +75,84 @@ select {
   min-height: 44px; /* iOS touch target recommendation */
   touch-action: manipulation; /* Disable double-tap zoom */
 }
+
+.react-grid-layout-custom-resize-handle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 10 10"><path d="M 0 10 L 10 0 M 5 10 L 10 5 M 8 10 L 10 8" stroke="%23a0aec0" stroke-width="1"/></svg>');
+  background-position: bottom right;
+  background-repeat: no-repeat;
+  padding: 0 4px 4px 0;
+}
+
+.react-grid-layout-custom-resize-handle-se {
+  bottom: 0;
+  right: 0;
+  cursor: nwse-resize;
+}
+
+.react-grid-layout-custom-resize-handle-sw {
+  bottom: 0;
+  left: 0;
+  cursor: nesw-resize;
+  transform: rotate(90deg);
+}
+
+.react-grid-layout-custom-resize-handle-ne {
+  top: 0;
+  right: 0;
+  cursor: nesw-resize;
+  transform: rotate(-90deg);
+}
+
+.react-grid-layout-custom-resize-handle-nw {
+  top: 0;
+  left: 0;
+  cursor: nwse-resize;
+  transform: rotate(180deg);
+}
+
+.react-grid-layout-custom-resize-handle-e {
+  top: 50%;
+  right: 0;
+  cursor: ew-resize;
+  margin-top: -10px;
+  transform: rotate(-45deg);
+}
+
+.react-grid-layout-custom-resize-handle-w {
+  top: 50%;
+  left: 0;
+  cursor: ew-resize;
+  margin-top: -10px;
+  transform: rotate(135deg);
+}
+
+.react-grid-layout-custom-resize-handle-n {
+  top: 0;
+  left: 50%;
+  cursor: ns-resize;
+  margin-left: -10px;
+  transform: rotate(-135deg);
+}
+
+.react-grid-layout-custom-resize-handle-s {
+  bottom: 0;
+  left: 50%;
+  cursor: ns-resize;
+  margin-left: -10px;
+  transform: rotate(45deg);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}

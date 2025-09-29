@@ -38,7 +38,9 @@ export function TableBody<T extends { id: string }>({
             const value = getColumnValue(item, column)
 
             return (
-              <td key={column.id} className="px-6 py-4 whitespace-nowrap text-sm">
+              <td key={column.id} className={`px-6 py-4 whitespace-nowrap text-sm ${
+                column.hideOnMobile ? 'hidden sm:table-cell' : ''
+              }`}>
                 {column.cell({ value, data: item, column })}
               </td>
             )

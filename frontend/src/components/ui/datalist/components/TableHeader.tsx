@@ -42,6 +42,8 @@ export function TableHeader<T>({
               key={column.id}
               className={`px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider ${
                 canSort ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800' : ''
+              } ${
+                column.hideOnMobile ? 'hidden sm:table-cell' : ''
               }`}
               style={{ width: column.width }}
               onClick={() => handleSort(column)}

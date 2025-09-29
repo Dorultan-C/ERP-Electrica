@@ -41,7 +41,7 @@ Responsibilities:
 - Validate request bodies and query parameters
 - Return typed responses matching frontend/mobile expectations
 - Handle authentication and authorization using JWT
-- nteract with PostgreSQL exclusively through Prisma
+- interact with PostgreSQL exclusively through Prisma
 - Integrate Socket.IO server for real-time updates
 - Emit events to web and mobile clients immediately after any data changes
 - Ensure real-time events respect permissions
@@ -103,4 +103,4 @@ Infrastructure is strictly hosting and deployment; AI should never put business 
 All real-time functionality must use Socket.IO server on backend and Socket.IO client on web and mobile
 Backend must emit events immediately after any data changes, and clients must update automatically—no polling or alternative real-time methods allowed
 Shared theme/design tokens exported in a TS file so that web and mobile have consistent styling
-For complex components, create shared component files where possible, so web and mobile can reuse logic while applying platform-specific wrappers. Always put state, behaviour, and permission checks in the shared logic file. Only styling or platform-specific tweaks go in .web.tsx or .native.tsx
+For complex components, create shared component files where possible, so web and mobile can reuse logic while applying platform-specific wrappers. Always put state, behaver, and permission checks in the shared logic file. Only styling or platform-specific tweaks go in .web.tsx or .native.tsx

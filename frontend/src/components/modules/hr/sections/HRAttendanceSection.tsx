@@ -1,10 +1,4 @@
-'use client'
-
-import React, { useEffect } from 'react'
-import { useNavigation } from '@/shared/contexts'
-import { AttendanceTracker } from '../components/AttendanceTracker'
-import { AttendanceList } from '../components/AttendanceList'
-import { TimesheetDetailsDrawer } from '../drawers/TimesheetDetailsDrawer'
+import { SectionHeader } from '@/components/ui/SectionHeader'
 
 export default function HRAttendanceSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation()
@@ -15,13 +9,11 @@ export default function HRAttendanceSection() {
   }, [setSelectedModule, setSelectedSection])
 
   return (
-    <div className="space-y-6">
-      <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Attendance</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Timesheets and attendance tracking
-        </p>
-      </div>
+    <div className="space-y-6 p-4 sm:p-6">
+      <SectionHeader 
+        title="Attendance"
+        description="Timesheets and attendance tracking"
+      />
 
       {/* Attendance Tracker */}
       <AttendanceTracker />

@@ -7,7 +7,7 @@
 - [ ] DB view
 - [ ] update use 24h clock
 - [ ] use schedules in AttendanceTracker
-- [ ] revise attendance tracker wisibility
+- [ ] revise attendance tracker visibility
 
 #### - Users
 - [ ] list how to display data

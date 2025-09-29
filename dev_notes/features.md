@@ -13,7 +13,7 @@
 - To the right of the module navigation button is the **Dashboard button**.  
   - The Dashboard is independent of modules and provides a **summary view** of data and quick actions.  
   - It is displayed as a **customizable masonry grid** of widgets.  
-  - Users can **add, remove, and rearrange widgets** as needed. Dashboard layout is persistant accross sessions.
+  - Users can **add, remove, and rearrange widgets** as needed. Dashboard layout is persistent across sessions.
   - The sections navigation side drawer is not present in the dashboard.
 
 - Each module contains **sections**, accessible via a **side drawer**.  
@@ -95,31 +95,31 @@
 
 ### 2.2  Projects
 
-cooming soon... 
+coming soon... 
 
 ---
 
 ### 2.3 Finance
 
-cooming soon...   
+coming soon...   
 
 ---
 
 ### 2.4 Inventory
 
-cooming soon...  
+coming soon...  
 
 ---
 
 ### 2.4 Files
 
-cooming soon...  
+coming soon...  
 
 ---
 
 ## 3. Cross-Module Features
 
-cooming soon... 
+coming soon... 
 
 ---
 

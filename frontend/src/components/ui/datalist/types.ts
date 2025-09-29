@@ -26,6 +26,7 @@ export interface DataListColumn<T = any> {
   searchable?: boolean
   filterable?: FilterConfig
   cell: (props: DataListCellProps<T>) => ReactNode
+  hideOnMobile?: boolean
 }
 
 export interface SortConfig {
@@ -43,6 +44,7 @@ export interface DataListProps<T = any> {
   pagination?: boolean
   pageSize?: number
   onRowClick?: (data: T) => void
+  loading?: boolean
 }
 
 export interface UseDataListOptions<T = any> {

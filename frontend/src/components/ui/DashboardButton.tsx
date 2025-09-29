@@ -1,19 +1,19 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
+import { useNavigation } from '../../shared/contexts'
 
-interface DashboardButtonProps {
-  onClick?: () => void
-}
+export default function DashboardButton() {
+  const { setSelectedModule } = useNavigation()
 
-export default function DashboardButton({ onClick }: DashboardButtonProps) {
   const handleClick = () => {
-    // TODO: Navigate to dashboard (will be implemented in later phases)
-    onClick?.()
+    setSelectedModule(null)
   }
 
   return (
-    <button
+    <Link
+      href="/"
       onClick={handleClick}
       className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 cursor-pointer"
       aria-label="Dashboard"
@@ -22,6 +22,6 @@ export default function DashboardButton({ onClick }: DashboardButtonProps) {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3l9 9v9a1 1 0 01-1 1H4a1 1 0 01-1-1v-9l9-9z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 21V12h6v9" />
       </svg>
-    </button>
+    </Link>
   )
 }
