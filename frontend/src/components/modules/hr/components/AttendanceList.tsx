@@ -505,7 +505,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
     <div className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
       {/* Filters Section */}
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid sm:grid-cols-[1fr_1fr_auto] grid-cols-1 gap-4">
           {/* User Selection - only show dropdown if user can read others' attendance */}
           {canReadOthers && (
             <div>
@@ -527,7 +527,7 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
                     }}
                     onFocus={() => setShowUserDropdown(true)}
                     onBlur={() => setTimeout(() => setShowUserDropdown(false), 150)}
-                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="whitespace-nowrap w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                   {selectedUser && (
                     <button
@@ -609,6 +609,24 @@ export function AttendanceList({ className = '' }: AttendanceListProps) {
               placeholder="Select date range"
             />
           </div>
+
+          {/* Create Timesheet Button */}
+          {selectedUser && (
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  console.log('Create new timesheet for user:', selectedUser.id)
+                  // TODO: Open timesheet creation drawer (Phase 9+)
+                }}
+                className="py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center cursor-pointer"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className='sm:hidden lg:flex ml-2'>New Timesheet</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
