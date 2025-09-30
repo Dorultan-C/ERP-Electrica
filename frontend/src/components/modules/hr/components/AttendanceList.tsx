@@ -41,13 +41,9 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
 
-  // Permission check - user must have permission to read their own or others' attendance
+  // Permission checks
   const canReadOwn = hasPermission("hr-attendance-manage-owns", "read");
   const canReadOthers = hasPermission("hr-attendance-manage-others", "read");
-
-  if (!canReadOwn && !canReadOthers) {
-    return null;
-  }
 
   // State management
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -307,8 +303,8 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
       // No timesheet - show day status only
       const config = ATTENDANCE_STATUS_CONFIG[record.status];
       let label: string = config.label;
-      let color = config.color;
-      let bgColor = config.bgColor;
+      const color = config.color;
+      const bgColor = config.bgColor;
 
       if (record.status === "holiday" && record.holiday?.name) {
         // Use the specific holiday name instead of generic "Public Holiday"
@@ -375,6 +371,11 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
     return date.toLocaleDateString("en-US", { weekday: "short" });
   };
 
+  // Early return for no permissions
+  if (!canReadOwn && !canReadOthers) {
+    return null;
+  }
+
   return (
     <div
       className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}
@@ -428,9 +429,8 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
                     record.date.toDateString() === new Date().toDateString();
 
                   // Permission checks for actions and reading
-                  const isOwnTimesheet =
-                    record.timesheet?.userId === currentUser?.id;
-                  const permissionType = isOwnTimesheet
+                  const isOwnRecord = selectedUser?.id === currentUser?.id;
+                  const permissionType = isOwnRecord
                     ? "hr-attendance-manage-owns"
                     : "hr-attendance-manage-others";
                   const canReadTimesheet = hasPermission(
@@ -505,7 +505,7 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
                     isWorkableDay && hasPermission(permissionType, "create");
                   const canRequestTimesheet =
                     isWorkableDay &&
-                    !isOwnTimesheet &&
+                    !isOwnRecord &&
                     hasPermission(
                       "hr-attendance-manage-others",
                       "request_changes"

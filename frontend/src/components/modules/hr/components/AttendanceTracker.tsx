@@ -15,13 +15,11 @@ import { approveTimesheet } from "@/shared/utils/timesheetActions";
 import {
   getUserEmploymentStatusForDate,
   isDateInRange,
-  normalizeDate,
 } from "@/shared/utils/employmentUtils";
 import { useTimesheetPermissions } from "@/shared/hooks/useTimesheetPermissions";
 import { TimesheetActionButtons } from "@/components/shared/TimesheetActionButtons";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 import { TIMER_INTERVAL } from "@/shared/constants/attendance";
-import type { UserStatus } from "@/shared/types";
 
 interface AttendanceState {
   isClocked: boolean;
@@ -50,11 +48,7 @@ export function AttendanceTracker() {
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Early return if user doesn't have clock permission
-  if (!hasPermission("hr-attendance-clock", "true")) {
-    return null;
-  }
+  const [showClockInConfirm, setShowClockInConfirm] = useState(false);
 
   // Update current time every second
   useEffect(() => {
@@ -65,14 +59,53 @@ export function AttendanceTracker() {
     return () => clearInterval(timer);
   }, []);
 
+  // Event handlers - moved here to ensure hooks are called before conditional logic
+  const handleDeleteTimesheet = useCallback(() => {
+    if (user) {
+      const existingTimesheet = dummyTimesheets.find(
+        (timesheet) =>
+          timesheet.userId === user.id &&
+          new Date(timesheet.date).toDateString() === new Date().toDateString()
+      );
+      if (existingTimesheet) {
+        console.log("Delete timesheet:", existingTimesheet.id);
+        setShowDeleteConfirm(false);
+      }
+    }
+  }, [user]);
+
+  const handleApprove = useCallback(
+    async (timesheetId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!user) return;
+      try {
+        await approveTimesheet(timesheetId, user.id);
+        // Force re-render by reloading (in real app, this would be handled by state management)
+        window.location.reload();
+      } catch (error) {
+        console.error("Error approving timesheet:", error);
+      }
+    },
+    [user]
+  );
+
+  const handleEdit = useCallback((timesheetId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log("Edit timesheet:", timesheetId);
+  }, []);
+
+  const handleDelete = useCallback(
+    (timesheetId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setShowDeleteConfirm(true);
+    },
+    []
+  );
+
+
   // Date and time calculations
   const today = new Date();
   const todayString = today.toDateString();
-  const todayDateOnly = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
   const todayDayOfWeek = today.getDay();
 
   // Get existing data for today
@@ -219,7 +252,29 @@ export function AttendanceTracker() {
     ? calculateWorkedTime()
     : attendanceState.totalWorkedMinutes;
 
-  // Handle clock in
+  // Check if clock in requires confirmation (unscheduled days or holidays)
+  const requiresConfirmation = canWork && (!isScheduledWorkDay || dayType === "holiday");
+
+  // Get confirmation message for unscheduled work
+  const getConfirmationMessage = () => {
+    if (dayType === "holiday") {
+      return `Today is ${publicHoliday?.name || "a public holiday"}. Are you sure you want to clock in?`;
+    } else if (!isScheduledWorkDay) {
+      return "You are not scheduled to work today. Are you sure you want to clock in?";
+    }
+    return "Are you sure you want to clock in?";
+  };
+
+  // Handle clock in attempt with confirmation check
+  const handleClockInAttempt = () => {
+    if (requiresConfirmation) {
+      setShowClockInConfirm(true);
+    } else {
+      handleClockIn();
+    }
+  };
+
+  // Actual clock in function
   const handleClockIn = () => {
     setAttendanceState((prev) => ({
       ...prev,
@@ -285,41 +340,6 @@ export function AttendanceTracker() {
     });
   };
 
-  // Event handlers
-  const handleDeleteTimesheet = useCallback(() => {
-    if (existingTimesheet) {
-      console.log("Delete timesheet:", existingTimesheet.id);
-      setShowDeleteConfirm(false);
-    }
-  }, [existingTimesheet]);
-
-  const handleApprove = useCallback(
-    async (timesheetId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      if (!user) return;
-      try {
-        await approveTimesheet(timesheetId, user.id);
-        // Force re-render by reloading (in real app, this would be handled by state management)
-        window.location.reload();
-      } catch (error) {
-        console.error("Error approving timesheet:", error);
-      }
-    },
-    [user]
-  );
-
-  const handleEdit = useCallback((timesheetId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log("Edit timesheet:", timesheetId);
-  }, []);
-
-  const handleDelete = useCallback(
-    (timesheetId: string, e: React.MouseEvent) => {
-      e.stopPropagation();
-      setShowDeleteConfirm(true);
-    },
-    []
-  );
 
   // Formatting functions
   const formatTime = (date: Date, includeSeconds: boolean = false) => {
@@ -468,6 +488,11 @@ export function AttendanceTracker() {
   const workingStatus = getWorkingStatus();
   const dateRange = getDateRange();
 
+  // Early return if user doesn't have clock permission
+  if (!hasPermission("hr-attendance-clock", "true")) {
+    return null;
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
       <div className="grid grid-cols-1 xl:grid-cols-[auto_auto_auto] xl:space-y-0 items-start">
@@ -524,7 +549,7 @@ export function AttendanceTracker() {
               {/* Clock In Button */}
               {canWork && !attendanceState.isClocked && !existingTimesheet && (
                 <button
-                  onClick={handleClockIn}
+                  onClick={handleClockInAttempt}
                   className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center md:space-x-2 cursor-pointer"
                 >
                   <svg
@@ -806,7 +831,7 @@ export function AttendanceTracker() {
             {/* Clock In Button */}
             {canWork && !attendanceState.isClocked && !existingTimesheet && (
               <button
-                onClick={handleClockIn}
+                onClick={handleClockInAttempt}
                 className="px-4 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center md:space-x-2 cursor-pointer"
               >
                 <svg
@@ -892,6 +917,20 @@ export function AttendanceTracker() {
         cancelText="Cancel"
         onConfirm={handleDeleteTimesheet}
         onCancel={() => setShowDeleteConfirm(false)}
+      />
+
+      {/* Clock In Confirmation Modal */}
+      <ConfirmationModal
+        isOpen={showClockInConfirm}
+        title="Clock In Confirmation"
+        message={getConfirmationMessage()}
+        confirmText="Clock In"
+        cancelText="Cancel"
+        onConfirm={() => {
+          setShowClockInConfirm(false);
+          handleClockIn();
+        }}
+        onCancel={() => setShowClockInConfirm(false)}
       />
     </div>
   );
