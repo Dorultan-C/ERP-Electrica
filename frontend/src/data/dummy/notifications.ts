@@ -27,7 +27,7 @@ export const dummyNotifications: Notification[] = [
     id: 'maintenance-1',
     userId: 'user-1',
     title: 'System maintenance',
-    message: 'Scheduled maintenance on Sunday at 2:00 AM',
+    message: 'Scheduled maintenance on Sunday at 02:00',
     type: 'system_alert',
     isRead: true,
     createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago

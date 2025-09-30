@@ -156,3 +156,7 @@ select {
 .animate-fade-in {
   animation: fadeIn 0.5s ease-in-out;
 }
+button.btn-small,
+button.btn-small:disabled {
+  min-height: unset;
+}

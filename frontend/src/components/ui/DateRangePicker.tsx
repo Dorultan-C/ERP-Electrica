@@ -20,7 +20,15 @@ const MONTHS = [
   'July', 'August', 'September', 'October', 'November', 'December'
 ]
 
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+const WEEKDAYS = [
+  { short: 'M', full: 'Monday' },
+  { short: 'T', full: 'Tuesday' },
+  { short: 'W', full: 'Wednesday' },
+  { short: 'T', full: 'Thursday' },
+  { short: 'F', full: 'Friday' },
+  { short: 'S', full: 'Saturday' },
+  { short: 'S', full: 'Sunday' }
+]
 
 export function DateRangePicker({
   value,
@@ -94,7 +102,10 @@ export function DateRangePicker({
     const firstDay = new Date(year, month, 1)
     const lastDay = new Date(year, month + 1, 0)
     const daysInMonth = lastDay.getDate()
-    const startDayOfWeek = firstDay.getDay()
+
+    // Convert Sunday=0 to Monday=0 format
+    // Sunday (0) becomes 6, Monday (1) becomes 0, etc.
+    const startDayOfWeek = (firstDay.getDay() + 6) % 7
 
     const days: (Date | null)[] = []
 
@@ -254,7 +265,7 @@ export function DateRangePicker({
           <svg className="w-4 h-4 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
-          <span className={value ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
+          <span className={`whitespace-nowrap ${value ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
             {getDisplayText()}
           </span>
         </div>
@@ -308,9 +319,9 @@ export function DateRangePicker({
           {/* Calendar Grid */}
           <div className="grid grid-cols-7 gap-1 mb-2">
             {/* Weekday headers */}
-            {WEEKDAYS.map(day => (
-              <div key={day} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400">
-                {day}
+            {WEEKDAYS.map((day, index) => (
+              <div key={`${day.full}-${index}`} className="h-8 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400">
+                {day.short}
               </div>
             ))}
 

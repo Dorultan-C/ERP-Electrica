@@ -46,9 +46,9 @@ export function Pagination({
   }
 
   return (
-    <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700">
+    <div className="px-1 mt-4">
       <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-700 dark:text-gray-300">
+        <div className="text-sm text-gray-500 dark:text-gray-400">
           Showing {startItem} to {endItem} of {totalItems} results
         </div>
 
@@ -56,7 +56,7 @@ export function Pagination({
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+            className="px-3 py-2 btn-small text-sm font-base text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             Previous
           </button>
@@ -65,7 +65,7 @@ export function Pagination({
             <button
               key={pageNum}
               onClick={() => setCurrentPage(pageNum)}
-              className={`px-3 py-1 text-sm font-medium rounded-md ${
+              className={`px-3 py-2 btn-small text-sm font-base rounded-md ${
                 pageNum === currentPage
                   ? 'bg-blue-600 text-white'
                   : 'text-gray-500 bg-white border border-gray-300 hover:bg-gray-50 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
@@ -78,7 +78,7 @@ export function Pagination({
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-1 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
+            className="px-3 py-2 btn-small text-sm font-base text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700"
           >
             Next
           </button>

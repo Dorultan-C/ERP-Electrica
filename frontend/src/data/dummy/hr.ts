@@ -56,8 +56,8 @@ export const dummyVacations: Vacation[] = [
   {
     id: "vac-002",
     userId: "user-002",
-    startDate: new Date("2025-09-2"),
-    endDate: new Date("2025-09-10"),
+    startDate: new Date("2025-09-08"),
+    endDate: new Date("2025-09-19"),
     days: 5,
     status: "approved",
     requestedAt: new Date("2024-01-10T14:20:00Z"),
@@ -88,19 +88,19 @@ export const dummyVacations: Vacation[] = [
 
 // Dummy Leave of Absence
 export const dummyLOAs: LeaveOfAbsence[] = [
-  {
+  /* {
     id: "loa-001",
     userId: "user-002",
     type: "medical",
-    startDate: new Date("2025-09-15"),
-    endDate: new Date("2025-09-19"),
+    startDate: new Date("2025-09-01"),
+    endDate: new Date("2025-09-25"),
     status: "approved",
     documents: ["medical-cert-001.pdf"],
     messages: [dummyMessages[1]!],
     requestedAt: new Date("2024-01-20T08:00:00Z"),
     reviewedBy: "user-001",
     reviewedAt: new Date("2024-01-22T15:30:00Z")
-  },
+  }, */
   {
     id: "loa-002",
     userId: "user-003",
@@ -143,15 +143,15 @@ export const dummyTimesheets: Timesheet[] = [
   {
     id: "ts-001",
     userId: "user-002",
-    date: new Date("2025-09-24"),
-    startTime: new Date("2025-09-24T09:00:00Z"),
-    endTime: new Date("2025-09-24T17:30:00Z"),
+    date: new Date("2025-09-29"),
+    startTime: new Date("2025-09-25T09:00:00Z"),
+    endTime: new Date("2025-09-25T17:30:00Z"),
     breaks: [dummyBreaks[0]!, dummyBreaks[1]!],
     totalMinutes: 435, // 7h 15m
     regularMinutes: 435,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "requires_modification",
+    status: "pending",
     reviewedBy: "user-002",
     reviewedAt: new Date("2024-01-23T10:00:00Z")
   },
@@ -203,7 +203,73 @@ export const dummyTimesheets: Timesheet[] = [
     regularMinutes: 480,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "requires_modification"
+    status: "requires_modification",
+    reviewedBy: "user-manager",
+    reviewedAt: new Date("2025-09-23T10:00:00Z")
+  },
+
+  // More pending timesheets for approval workflow testing
+  {
+    id: "ts-005",
+    userId: "user-001",
+    date: new Date("2025-09-24"),
+    startTime: new Date("2025-09-24T08:30:00Z"),
+    endTime: new Date("2025-09-24T17:00:00Z"),
+    breaks: [
+      {
+        id: "break-006",
+        startTime: new Date("2025-09-24T12:00:00Z"),
+        endTime: new Date("2025-09-24T12:30:00Z"),
+        totalMinutes: 30
+      }
+    ],
+    totalMinutes: 480,
+    regularMinutes: 480,
+    overtimeMinutes: 0,
+    breakMinutes: 30,
+    status: "pending"
+  },
+  {
+    id: "ts-006",
+    userId: "user-003",
+    date: new Date("2025-09-23"),
+    startTime: new Date("2025-09-23T09:15:00Z"),
+    endTime: new Date("2025-09-23T17:45:00Z"),
+    breaks: [
+      {
+        id: "break-007",
+        startTime: new Date("2025-09-23T12:30:00Z"),
+        endTime: new Date("2025-09-23T13:15:00Z"),
+        totalMinutes: 45
+      }
+    ],
+    totalMinutes: 465,
+    regularMinutes: 465,
+    overtimeMinutes: 0,
+    breakMinutes: 45,
+    status: "pending"
+  },
+  {
+    id: "ts-007",
+    userId: "user-005",
+    date: new Date("2025-09-21"),
+    startTime: new Date("2025-09-21T08:00:00Z"),
+    endTime: new Date("2025-09-21T16:30:00Z"),
+    breaks: [
+      {
+        id: "break-008",
+        startTime: new Date("2025-09-21T12:00:00Z"),
+        endTime: new Date("2025-09-21T13:00:00Z"),
+        totalMinutes: 60
+      }
+    ],
+    totalMinutes: 450,
+    regularMinutes: 450,
+    overtimeMinutes: 0,
+    breakMinutes: 60,
+    status: "approved",
+    reviewedBy: "user-manager",
+    reviewedAt: new Date("2025-09-22T09:00:00Z")
   }
 ];
 
@@ -211,8 +277,8 @@ export const dummyTimesheets: Timesheet[] = [
 export const dummyPublicHolidays: PublicHoliday[] = [
   {
     id: "ph-001",
-    name: "Local Fastivity",
-    date: new Date("2025-09-22")
+    name: "Fiesta mayor",
+    date: new Date("2025-09-25")
   },
   {
     id: "ph-002",
@@ -228,12 +294,12 @@ export const dummyPublicHolidays: PublicHoliday[] = [
 
 // Dummy Closing Days
 export const dummyClosingDays: ClosingDay[] = [
-  /* {
+  {
     id: "cd-001",
-    startDate: new Date("2025-09-24"),
+    startDate: new Date("2025-09-22"),
     endDate: new Date("2025-09-25"),
     description: "Christmas Closing"
-  }, */
+  },
   {
     id: "cd-002",
     startDate: new Date("2024-08-15"),
@@ -247,7 +313,7 @@ export const dummySchedules: Schedule[] = [
   {
     id: "schedule-001",
     name: "Standard Office Hours",
-    description: "Monday to Friday, 9 AM to 5 PM",
+    description: "Monday to Friday, 09:00 to 17:00",
     weekSchedule: [
       {
         id: "sd-001",
@@ -294,7 +360,7 @@ export const dummySchedules: Schedule[] = [
   {
     id: "schedule-002",
     name: "Flexible Hours",
-    description: "Monday to Friday, 8 AM to 4 PM",
+    description: "Monday to Friday, 08:00 to 16:00",
     weekSchedule: [
       {
         id: "sd-006",
