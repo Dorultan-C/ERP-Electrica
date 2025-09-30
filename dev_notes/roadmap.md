@@ -126,7 +126,7 @@ This roadmap outlines the complete development phases for the ERP system, starti
 ### 6.1 Dashboard Layout & Widgets
 - [x] 6.1.1 Create responsive masonry grid layout
 - [x] 6.1.2 Implement base widget component system
-- [ ] 6.1.3 Create sample widgets (stats, charts, quick actions)
+- [x] 6.1.3 Create sample widgets (stats, charts, quick actions)
 - [ ] 6.1.4 Add widget customization functionality
 
 ### 6.2 Dashboard Personalization
