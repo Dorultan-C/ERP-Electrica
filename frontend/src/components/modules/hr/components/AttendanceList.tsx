@@ -489,7 +489,11 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
                       isDateInRange(record.date, l.startDate, l.endDate)
                   );
                   const hasClosingDay = dummyClosingDays.find((closing) =>
-                    isDateInRange(record.date, closing.startDate, closing.endDate)
+                    isDateInRange(
+                      record.date,
+                      closing.startDate,
+                      closing.endDate
+                    )
                   );
                   const isWorkableDay =
                     !record.timesheet &&
