@@ -4,12 +4,11 @@
 
 #### - Attendance
 
-- [ ] RightDrawer breadcrums
-- [ ] drawer how to display data
-- [ ] edit drawer how to display data
-- [ ] AttendanceTracker cleanup code
-- [ ] AttendanceList cleanup code
+- [ ] additional right drawer > user + schedule link
+- [ ] finish drawer how to display data
 - [ ] Breadcrums component
+- [ ] RightDrawer breadcrums
+- [ ] edit drawer
 
 #### - Users
 

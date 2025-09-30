@@ -110,8 +110,12 @@ export const dummyUsers: User[] = [
         actions: ["create", "delete", "approve", "update_approved", "read", "delete_approved", "update"]
       },
       {
+        permissionId: "hr-schedules-manage",
+        actions: ["read"]
+      },
+      {
         permissionId: "hr-attendance-manage-others",
-        actions: ["create", "update", "delete", "approve", "request_changes", "update_approved", "read", "delete_approved"]
+        actions: ["read", "create", "update", "delete", "approve", "request_changes", "update_approved", "delete_approved"]
       },
       {
         permissionId: "hr-attendance-clock",

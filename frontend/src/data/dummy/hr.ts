@@ -199,12 +199,12 @@ export const dummyTimesheets: Timesheet[] = [
         totalMinutes: 15
       }
     ],
-    totalMinutes: 480,
+    totalMinutes: 540,
     regularMinutes: 480,
     overtimeMinutes: 0,
     breakMinutes: 75,
     status: "requires_modification",
-    reviewedBy: "user-manager",
+    reviewedBy: "user-001",
     reviewedAt: new Date("2025-09-23T10:00:00Z")
   },
 
@@ -268,7 +268,7 @@ export const dummyTimesheets: Timesheet[] = [
     overtimeMinutes: 0,
     breakMinutes: 60,
     status: "approved",
-    reviewedBy: "user-manager",
+    reviewedBy: "user-002",
     reviewedAt: new Date("2025-09-22T09:00:00Z")
   }
 ];

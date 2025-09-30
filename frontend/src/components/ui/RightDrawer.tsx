@@ -89,7 +89,7 @@ export function RightDrawer({
         } ${className}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
+        <div className="flex items-center justify-between p-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 flex-shrink-0">
           {/* Left side - Expand button (hidden on mobile since drawer is full-screen) */}
           <div className="flex items-center">
             {onToggleExpand && (
