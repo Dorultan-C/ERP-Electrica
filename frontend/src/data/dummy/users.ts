@@ -107,7 +107,7 @@ export const dummyUsers: User[] = [
       },
       {
         permissionId: "hr-attendance-manage-owns",
-        actions: ["create", "delete", "approve", "update_approved", "read", "delete_approved", "update"]
+        actions: ["message", "create", "delete", "approve", "update_approved", "read", "delete_approved", "update"]
       },
       {
         permissionId: "hr-schedules-manage",
@@ -115,7 +115,7 @@ export const dummyUsers: User[] = [
       },
       {
         permissionId: "hr-attendance-manage-others",
-        actions: ["read", "create", "update", "delete", "approve", "request_changes", "update_approved", "delete_approved"]
+        actions: ["message", "read", "create", "update", "delete", "approve", "request_changes", "update_approved", "delete_approved"]
       },
       {
         permissionId: "hr-attendance-clock",

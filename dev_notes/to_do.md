@@ -4,8 +4,8 @@
 
 #### - Attendance
 
+- [ ] right drawer access denied
 - [ ] additional right drawer > user + schedule link
-- [ ] finish drawer how to display data
 - [ ] Breadcrums component
 - [ ] RightDrawer breadcrums
 - [ ] edit drawer

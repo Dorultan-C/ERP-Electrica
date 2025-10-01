@@ -425,8 +425,10 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
                 {paginatedRecords.map((record, index) => {
                   const statusDisplay = getStatusDisplay(record);
                   const isGrayedOut = !record.isExpectedWorkDay;
+                  const today = new Date();
                   const isToday =
-                    record.date.toDateString() === new Date().toDateString();
+                    record.date.toDateString() === today.toDateString();
+                  const isNotFutureDate = record.date <= today;
 
                   // Permission checks for actions and reading
                   const isOwnRecord = selectedUser?.id === currentUser?.id;
@@ -502,9 +504,12 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
                     !hasUnderlyingLOA &&
                     !hasClosingDay;
                   const canCreateTimesheet =
-                    isWorkableDay && hasPermission(permissionType, "create");
+                    isWorkableDay &&
+                    isNotFutureDate &&
+                    hasPermission(permissionType, "create");
                   const canRequestTimesheet =
                     isWorkableDay &&
+                    isNotFutureDate &&
                     !isOwnRecord &&
                     hasPermission(
                       "hr-attendance-manage-others",

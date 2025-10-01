@@ -49,6 +49,7 @@ export const permissions: Permission[] = [
       "approve",
       "update_approved",
       "delete_approved",
+      "message",
     ],
   },
 
@@ -68,6 +69,7 @@ export const permissions: Permission[] = [
       "request_changes",
       "update_approved",
       "delete_approved",
+      "message",
     ],
   },
 
