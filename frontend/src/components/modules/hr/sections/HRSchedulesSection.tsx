@@ -4,13 +4,12 @@ import React, { useEffect } from 'react'
 import { useNavigation, useDrawer } from '@/shared/contexts'
 import { DataList, Cell } from '@/components/ui/datalist'
 import type { DataListColumn } from '@/components/ui/datalist'
-import { ScheduleDetailsDrawer } from '../drawers/ScheduleDetailsDrawer'
 import { dummySchedules } from '@/data/dummy/hr'
 import type { Schedule } from '@/shared/types'
 
 export default function HRSchedulesSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation()
-  const { openDrawer } = useDrawer()
+  const { open: openDrawer } = useDrawer()
 
   useEffect(() => {
     setSelectedModule('hr')
@@ -108,9 +107,6 @@ export default function HRSchedulesSection() {
           and adaptive drawer behavior. All layouts scale properly from mobile to desktop.
         </p>
       </div>
-
-      {/* Schedule Details Drawer */}
-      <ScheduleDetailsDrawer onEdit={handleEditSchedule} />
     </div>
   )
 }

@@ -4,14 +4,13 @@ import React, { useEffect } from 'react'
 import { useNavigation, useDrawer } from '@/shared/contexts'
 import { DataList, Cell } from '@/components/ui/datalist'
 import type { DataListColumn } from '@/components/ui/datalist'
-import { UserDetailsDrawer } from '../drawers/UserDetailsDrawer'
 import { dummyUsers } from '@/data/dummy/users'
 import type { User } from '@/shared/types'
 import { getUserStatusColorMap } from '@/shared/utils'
 
 export default function HRUsersSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation()
-  const { openDrawer } = useDrawer()
+  const { open: openDrawer } = useDrawer()
 
   useEffect(() => {
     setSelectedModule('hr')
@@ -143,8 +142,6 @@ export default function HRUsersSection() {
         </p>
       </div>
 
-      {/* User Details Drawer */}
-      <UserDetailsDrawer onEdit={handleEditUser} />
     </div>
   )
 }

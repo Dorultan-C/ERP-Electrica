@@ -37,7 +37,7 @@ interface AttendanceListProps {
 
 export function AttendanceList({ className = "" }: AttendanceListProps) {
   // Hooks
-  const { openDrawer } = useDrawer();
+  const { open: openDrawer } = useDrawer();
   const { user: currentUser } = useAuth();
   const { hasPermission } = usePermissions();
 
@@ -62,18 +62,27 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
     null
   );
 
+  // Available users based on permissions
+  const availableUsers = useMemo(() => {
+    // Filter users based on read permissions (own and/or others)
+    if (canReadOthers && canReadOwn) return dummyUsers;
+    if (canReadOthers)
+      return dummyUsers.filter((user) => user.id !== currentUser?.id);
+    if (canReadOwn) return currentUser ? [currentUser] : [];
+    return [];
+  }, [canReadOthers, canReadOwn, currentUser]);
+
   // Set current user as default selection (only if user hasn't manually cleared it)
   useEffect(() => {
-    if (currentUser && !selectedUser && !hasUserManuallyClearedSelection) {
-      setSelectedUser(currentUser);
+    if (
+      !selectedUser &&
+      !hasUserManuallyClearedSelection &&
+      availableUsers.length > 0
+    ) {
+      setSelectedUser(availableUsers[0] ?? null);
     }
     // If user can only read their own attendance, force selection to current user
-    if (
-      currentUser &&
-      canReadOwn &&
-      !canReadOthers &&
-      selectedUser?.id !== currentUser.id
-    ) {
+    if (currentUser && canReadOwn && selectedUser?.id !== currentUser.id) {
       setSelectedUser(currentUser);
     }
   }, [
@@ -82,13 +91,8 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
     hasUserManuallyClearedSelection,
     canReadOwn,
     canReadOthers,
+    availableUsers,
   ]);
-
-  // Available users based on permissions
-  const availableUsers = useMemo(() => {
-    // If user can only read their own attendance, only show current user
-    return canReadOthers ? dummyUsers : currentUser ? [currentUser] : [];
-  }, [canReadOthers, currentUser]);
 
   const dateRangeArray = useMemo(() => {
     if (!dateRange) return [];

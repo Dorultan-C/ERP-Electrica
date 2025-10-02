@@ -143,7 +143,7 @@ export const dummyTimesheets: Timesheet[] = [
   {
     id: "ts-001",
     userId: "user-002",
-    date: new Date("2025-09-29"),
+    date: new Date("2025-10-01"),
     startTime: new Date("2025-09-25T09:00:00Z"),
     endTime: new Date("2025-09-25T17:30:00Z"),
     breaks: [dummyBreaks[0]!, dummyBreaks[1]!],
@@ -151,7 +151,7 @@ export const dummyTimesheets: Timesheet[] = [
     regularMinutes: 435,
     overtimeMinutes: 0,
     breakMinutes: 75,
-    status: "pending",
+    status: "approved",
     reviewedBy: "user-002",
     reviewedAt: new Date("2024-01-23T10:00:00Z")
   },

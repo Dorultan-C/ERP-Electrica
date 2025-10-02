@@ -4,10 +4,6 @@
 
 #### - Attendance
 
-- [ ] right drawer access denied
-- [ ] additional right drawer > user + schedule link
-- [ ] Breadcrums component
-- [ ] RightDrawer breadcrums
 - [ ] edit drawer
 
 #### - Users

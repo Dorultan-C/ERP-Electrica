@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { useNavigation } from "@/shared/contexts";
 import { AttendanceTracker } from "../components/AttendanceTracker";
 import { AttendanceList } from "../components/AttendanceList";
-import { TimesheetDetailsDrawer } from "../drawers/TimesheetDetailsDrawer";
 
 export default function HRAttendanceSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation();
@@ -34,9 +33,6 @@ export default function HRAttendanceSection() {
           holidays.
         </p>
       </div>
-
-      {/* Timesheet Details Drawer */}
-      <TimesheetDetailsDrawer />
     </div>
   );
 }
