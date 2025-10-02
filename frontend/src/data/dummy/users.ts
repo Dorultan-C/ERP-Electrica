@@ -2,7 +2,7 @@
 // This file contains dummy user data for prototype development
 // TODO: Replace with real API calls in Phase 9 (Backend Integration)
 
-import type { User, UserStatus, EmploymentHistoryEvent } from "../../shared/types/index";
+import type { User, UserStatus, EmploymentHistoryEvent, EmergencyContact } from "../../shared/types/index";
 
 // Employment history events for dummy data
 const employmentHistoryEvents: EmploymentHistoryEvent[] = [
@@ -58,11 +58,19 @@ export const dummyUsers: User[] = [
     address: "123 Main St, Anytown, ST 12345",
     nationalID: "123456789",
     insuranceNumber: "INS123456",
+    birthDate: new Date("1990-05-15"),
+    emergencyContact: {
+      id: "ec-001",
+      firstName: "Mary",
+      lastName: "Doe",
+      phoneNumber: "+1-555-9999",
+      email: "mary.doe@email.com"
+    },
     yearlyVacationDays: 25,
     vacationDaysType: "labouring",
     profileImage: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=300&fit=crop&crop=face",
     status: "active",
-    employmentHistory: [employmentHistoryEvents[0]!],
+    employmentHistory: [employmentHistoryEvents[0]!, employmentHistoryEvents[1]!],
     assignedScheduleId: "schedule-001",
     roleIds: ["role-001", "role-002"],
     permissions: [
@@ -93,6 +101,14 @@ export const dummyUsers: User[] = [
     address: "456 Oak Ave, Another City, ST 12346",
     nationalID: "987654321",
     insuranceNumber: "INS987654",
+    birthDate: new Date("1988-11-22"),
+    emergencyContact: {
+      id: "ec-002",
+      firstName: "Robert",
+      lastName: "Smith",
+      phoneNumber: "+1-555-8888",
+      email: "robert.smith@email.com"
+    },
     yearlyVacationDays: 30,
     vacationDaysType: "natural",
     profileImage: "https://images.unsplash.com/photo-1494790108755-2616b612b372?w=300&h=300&fit=crop&crop=face",

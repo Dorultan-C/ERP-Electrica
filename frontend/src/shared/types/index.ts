@@ -19,6 +19,8 @@ export interface User {
   address?: string;
   nationalID: string;
   insuranceNumber: string;
+  birthDate?: Date,
+  emergencyContact?: EmergencyContact;
   yearlyVacationDays: number;
   vacationDaysType: VacationDaysType;
   profileImage?: string;
@@ -29,6 +31,14 @@ export interface User {
   permissions: UserPermission[];
   createdAt: Date;
 }
+
+export interface EmergencyContact {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber?: string;
+  email?: string;
+} 
 
 export interface Schedule {
   id: string;

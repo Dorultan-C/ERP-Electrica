@@ -9,11 +9,13 @@ import type {
   AttendanceStatus,
   TimesheetStatus,
 } from "@/shared/constants/attendance";
+import { USER_STATUS_CONFIG } from "@/shared/utils/ui";
+import type { UserStatus } from "@/shared/types";
 
 interface StatusBadgeProps {
-  status: AttendanceStatus | TimesheetStatus;
+  status: AttendanceStatus | TimesheetStatus | UserStatus;
   label?: string | undefined;
-  type?: "attendance" | "timesheet";
+  type?: "attendance" | "timesheet" | "user";
   className?: string;
 }
 
@@ -23,10 +25,20 @@ export function StatusBadge({
   type = "attendance",
   className = "",
 }: StatusBadgeProps) {
-  const config =
-    type === "attendance"
+  let config: { label: string; color?: string; bgColor?: string; textColor?: string } | undefined;
+
+  if (type === "user") {
+    const userConfig = USER_STATUS_CONFIG[status as UserStatus];
+    config = userConfig ? {
+      label: userConfig.label,
+      color: userConfig.textColor,
+      bgColor: userConfig.bgColor,
+    } : undefined;
+  } else {
+    config = type === "attendance"
       ? ATTENDANCE_STATUS_CONFIG[status as AttendanceStatus]
       : TIMESHEET_STATUS_CONFIG[status as TimesheetStatus];
+  }
 
   if (!config) {
     return null;

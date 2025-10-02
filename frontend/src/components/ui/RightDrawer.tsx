@@ -96,7 +96,7 @@ export function RightDrawer({
                 {showBackButton && (
                   <button
                     onClick={onNavigateBack}
-                    className="flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                    className="flex items-center justify-center px-3 py-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 cursor-pointer"
                     title="Go back"
                   >
                     <svg
@@ -118,7 +118,7 @@ export function RightDrawer({
                 {/* Expand button (hidden on mobile) */}
                 <button
                   onClick={onToggleExpand}
-                  className="hidden sm:flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                  className="hidden sm:flex items-center justify-center px-3 py-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 cursor-pointer"
                   title={isExpanded ? "Collapse" : "Expand"}
                 >
                   {isExpanded ? (
@@ -143,14 +143,17 @@ export function RightDrawer({
 
               {/* Center - Breadcrumbs */}
               <div className="flex-1 px-2 overflow-hidden">
-                <Breadcrumbs stack={stack} onNavigateToIndex={onNavigateToIndex} />
+                <Breadcrumbs
+                  stack={stack}
+                  onNavigateToIndex={onNavigateToIndex}
+                />
               </div>
 
               {/* Right side - Close button */}
               <div className="flex items-center space-x-1">
                 <button
                   onClick={onClose}
-                  className="p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200"
+                  className="px-3 py-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors duration-200 cursor-pointer"
                   title="Close"
                 >
                   <svg
@@ -178,19 +181,23 @@ export function RightDrawer({
                   custom={direction}
                   variants={{
                     enter: (direction: number) => ({
-                      x: direction > 0 ? "100%" : "-100%"
+                      x: direction > 0 ? "100%" : "-100%",
                     }),
                     center: {
-                      x: 0
+                      x: 0,
                     },
                     exit: (direction: number) => ({
-                      x: direction > 0 ? "-100%" : "100%"
-                    })
+                      x: direction > 0 ? "-100%" : "100%",
+                    }),
                   }}
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ type: "tween", duration: 0.3, ease: "easeInOut" }}
+                  transition={{
+                    type: "tween",
+                    duration: 0.3,
+                    ease: "easeInOut",
+                  }}
                   className="absolute inset-0 overflow-y-auto [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:border-transparent dark:[&::-webkit-scrollbar-thumb]:bg-gray-600 hover:[&::-webkit-scrollbar-thumb]:bg-gray-400 dark:hover:[&::-webkit-scrollbar-thumb]:bg-gray-500"
                 >
                   {children}

@@ -1,56 +1,64 @@
-'use client'
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react'
-import { DrawerStackItem } from '@/shared/contexts/DrawerContext'
+import React, { useState, useRef, useEffect } from "react";
+import { DrawerStackItem } from "@/shared/contexts/DrawerContext";
 
 interface BreadcrumbsProps {
-  stack: DrawerStackItem[]
-  onNavigateToIndex: (index: number) => void
+  stack: DrawerStackItem[];
+  onNavigateToIndex: (index: number) => void;
 }
 
 export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
-  const [isOverflowing, setIsOverflowing] = useState(false)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false)
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowDropdown(false);
       }
-    }
+    };
 
     if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [showDropdown])
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showDropdown]);
 
   // Check if breadcrumbs are overflowing
   useEffect(() => {
     const checkOverflow = () => {
       if (containerRef.current) {
-        const isOverflow = containerRef.current.scrollWidth > containerRef.current.clientWidth
-        setIsOverflowing(isOverflow || stack.length > 3)
+        const isOverflow =
+          containerRef.current.scrollWidth > containerRef.current.clientWidth;
+        setIsOverflowing(isOverflow || stack.length > 3);
       }
-    }
+    };
 
-    checkOverflow()
-    window.addEventListener('resize', checkOverflow)
+    checkOverflow();
+    window.addEventListener("resize", checkOverflow);
 
-    return () => window.removeEventListener('resize', checkOverflow)
-  }, [stack])
+    return () => window.removeEventListener("resize", checkOverflow);
+  }, [stack]);
 
   // Only show breadcrumbs if there are 2+ items in the stack
-  if (stack.length <= 1) return null
+  if (stack.length <= 1) return null;
 
-  const renderBreadcrumb = (item: DrawerStackItem, index: number, isLast: boolean) => {
-    const isClickable = !isLast
+  const renderBreadcrumb = (
+    item: DrawerStackItem,
+    index: number,
+    isLast: boolean
+  ) => {
+    const isClickable = !isLast;
 
     return (
       <React.Fragment key={`${item.type}-${item.id}-${index}`}>
@@ -73,7 +81,7 @@ export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
         {isClickable ? (
           <button
             onClick={() => onNavigateToIndex(index)}
-            className="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline focus:outline-none focus:underline transition-colors truncate max-w-[120px] sm:max-w-[150px]"
+            className="btn-small text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 focus:outline-none focus:underline transition-colors truncate max-w-[120px] sm:max-w-[150px] cursor-pointer"
             title={item.title}
           >
             {item.title}
@@ -87,15 +95,15 @@ export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
           </span>
         )}
       </React.Fragment>
-    )
-  }
+    );
+  };
 
   // Compact mode: show first, ..., and last 2 items
   if (isOverflowing && stack.length > 3) {
-    const first = stack[0]!
-    const lastTwo = stack.slice(-2)
-    const hiddenCount = stack.length - 3
-    const hiddenItems = stack.slice(1, -2)
+    const first = stack[0]!;
+    const lastTwo = stack.slice(-2);
+    const hiddenCount = stack.length - 3;
+    const hiddenItems = stack.slice(1, -2);
 
     return (
       <nav className="flex items-center space-x-1 text-sm" ref={containerRef}>
@@ -122,7 +130,7 @@ export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
           <button
             onClick={() => setShowDropdown(!showDropdown)}
             className="px-2 py-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-            title={`${hiddenCount} more item${hiddenCount > 1 ? 's' : ''}`}
+            title={`${hiddenCount} more item${hiddenCount > 1 ? "s" : ""}`}
           >
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
               <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
@@ -136,8 +144,8 @@ export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
                 <button
                   key={`${item.type}-${item.id}-hidden`}
                   onClick={() => {
-                    onNavigateToIndex(idx + 1)
-                    setShowDropdown(false)
+                    onNavigateToIndex(idx + 1);
+                    setShowDropdown(false);
                   }}
                   className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors truncate"
                   title={item.title}
@@ -151,18 +159,25 @@ export function Breadcrumbs({ stack, onNavigateToIndex }: BreadcrumbsProps) {
 
         {/* Last two items */}
         {lastTwo.map((item, idx) =>
-          renderBreadcrumb(item, stack.length - 2 + idx, idx === lastTwo.length - 1)
+          renderBreadcrumb(
+            item,
+            stack.length - 2 + idx,
+            idx === lastTwo.length - 1
+          )
         )}
       </nav>
-    )
+    );
   }
 
   // Normal mode: show all items
   return (
-    <nav className="flex items-center space-x-1 text-sm overflow-hidden" ref={containerRef}>
+    <nav
+      className="flex items-center space-x-1 text-sm overflow-hidden"
+      ref={containerRef}
+    >
       {stack.map((item, index) =>
         renderBreadcrumb(item, index, index === stack.length - 1)
       )}
     </nav>
-  )
+  );
 }
