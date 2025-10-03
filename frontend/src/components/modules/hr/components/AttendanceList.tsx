@@ -85,8 +85,8 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
     if (
       currentUser &&
       canReadOwn &&
-      !canReadOthers &&
-      selectedUser?.id !== currentUser.id
+      !hasUserManuallyClearedSelection &&
+      (!selectedUser || (!canReadOthers && selectedUser?.id !== currentUser.id))
     ) {
       setSelectedUser(currentUser);
     }
