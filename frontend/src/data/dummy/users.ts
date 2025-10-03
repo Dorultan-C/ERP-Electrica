@@ -59,6 +59,13 @@ export const dummyUsers: User[] = [
     nationalID: "123456789",
     insuranceNumber: "INS123456",
     birthDate: new Date("1990-05-15"),
+    clothingSizes: {
+      shoe: 42,
+      shirt: "L",
+      trousers: 44,
+      jacket: "L",
+      gloves: 9
+    },
     emergencyContact: {
       id: "ec-001",
       firstName: "Mary",
@@ -123,7 +130,7 @@ export const dummyUsers: User[] = [
       },
       {
         permissionId: "hr-attendance-manage-owns",
-        actions: ["message", "create", "delete", "approve", "update_approved", "read", "delete_approved", "update"]
+        actions: ["message", "create", "approve", "update_approved", "read", "delete_approved", "update"]
       },
       {
         permissionId: "hr-schedules-manage",
@@ -136,6 +143,10 @@ export const dummyUsers: User[] = [
       {
         permissionId: "hr-attendance-clock",
         actions: ["true"]
+      },
+      {
+        permissionId: "hr-users-permissions-others",
+        actions: ["read_own"]
       }
     ],
     createdAt: new Date("2022-03-20T10:15:00Z")

@@ -6,6 +6,7 @@ import React from 'react'
 // Import and export all permission-related types first
 import type { UserPermission } from './permissions'
 export * from './permissions'
+import { ClothingSizes } from './clothing';
 
 export interface User {
   id: string;
@@ -20,6 +21,7 @@ export interface User {
   nationalID: string;
   insuranceNumber: string;
   birthDate?: Date,
+  clothingSizes?: ClothingSizes;
   emergencyContact?: EmergencyContact;
   yearlyVacationDays: number;
   vacationDaysType: VacationDaysType;

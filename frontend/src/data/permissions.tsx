@@ -80,7 +80,7 @@ export const permissions: Permission[] = [
     description: "Permission to view/request own's permissions",
     moduleId: "hr",
     sectionId: "users",
-    actions: ["read_own", "read_all", "request"],
+    actions: ["read_own", "read_all"],
   },
 
   // HR - Users: Manage other's permissions
