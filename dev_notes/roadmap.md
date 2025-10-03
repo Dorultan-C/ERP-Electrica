@@ -92,8 +92,8 @@ This roadmap outlines the complete development phases for the ERP system, starti
 
 ### 4.3 Users Section
 
-- [ ] 4.3.1 Create users list with dummy data
-- [ ] 4.3.2 Implement user details drawer
+- [x] 4.3.1 Create users list with dummy data
+- [x] 4.3.2 Implement user details drawer
 - [ ] 4.3.3 Add user creation and editing forms
 - [ ] 4.3.4 Create user management quick actions
 
