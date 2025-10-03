@@ -82,7 +82,12 @@ export function AttendanceList({ className = "" }: AttendanceListProps) {
       setSelectedUser(availableUsers[0] ?? null);
     }
     // If user can only read their own attendance, force selection to current user
-    if (currentUser && canReadOwn && selectedUser?.id !== currentUser.id) {
+    if (
+      currentUser &&
+      canReadOwn &&
+      !canReadOthers &&
+      selectedUser?.id !== currentUser.id
+    ) {
       setSelectedUser(currentUser);
     }
   }, [
