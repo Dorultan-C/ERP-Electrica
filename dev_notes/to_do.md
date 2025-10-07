@@ -24,3 +24,5 @@
 - [ ] users drawer permissions
 - [ ] schedules list permissions
 - [ ] schedules drawer permissions
+
+// this is a note to test github and the workflow of forking. Thanks Cristi
