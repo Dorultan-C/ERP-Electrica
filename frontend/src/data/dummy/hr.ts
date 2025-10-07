@@ -143,7 +143,7 @@ export const dummyTimesheets: Timesheet[] = [
   {
     id: "ts-001",
     userId: "user-002",
-    date: new Date("2025-09-26"),
+    date: new Date("2025-10-01"),
     startTime: new Date("2025-09-25T09:00:00Z"),
     endTime: new Date("2025-09-25T17:30:00Z"),
     breaks: [dummyBreaks[0]!, dummyBreaks[1]!],
@@ -183,29 +183,52 @@ export const dummyTimesheets: Timesheet[] = [
     id: "ts-004",
     userId: "user-002",
     date: new Date("2025-09-22"),
-    startTime: new Date("2025-09-22T09:00:00Z"),
-    endTime: new Date("2025-09-22T18:00:00Z"),
+    startTime: new Date("2025-09-22T06:00:00Z"),
+    endTime: new Date("2025-09-22T15:00:00Z"),
     breaks: [
       {
         id: "break-004",
-        startTime: new Date("2025-09-22T12:00:00Z"),
-        endTime: new Date("2025-09-22T13:00:00Z"),
+        startTime: new Date("2025-09-22T11:00:00Z"),
+        endTime: new Date("2025-09-22T12:00:00Z"),
         totalMinutes: 60
       },
       {
         id: "break-005",
-        startTime: new Date("2025-09-22T15:30:00Z"),
-        endTime: new Date("2025-09-22T15:45:00Z"),
+        startTime: new Date("2025-09-22T08:30:00Z"),
+        endTime: new Date("2025-09-22T08:45:00Z"),
         totalMinutes: 15
       }
     ],
-    totalMinutes: 480,
+    totalMinutes: 540,
     regularMinutes: 480,
     overtimeMinutes: 0,
-    breakMinutes: 75,
+    breakMinutes: 60,
     status: "requires_modification",
-    reviewedBy: "user-manager",
-    reviewedAt: new Date("2025-09-23T10:00:00Z")
+    reviewedBy: "user-001",
+    reviewedAt: new Date("2025-09-23T10:00:00Z"),
+    messages: [
+      {
+        id: "msg-001",
+        userId: "user-001",
+        text: "Please double-check your break times. The 15-minute break at 8:30 AM seems to overlap with your work start time.",
+        date: new Date("2025-09-23T10:00:00Z"),
+        isAnswered: false
+      },
+      {
+        id: "msg-002",
+        userId: "user-002",
+        text: "You're right, I took a quick coffee break after clocking in. Should I adjust the start time or remove this break?",
+        date: new Date("2025-09-23T14:30:00Z"),
+        isAnswered: false
+      },
+      {
+        id: "msg-003",
+        userId: "user-001",
+        text: "Please adjust your start time to 6:00 AM and keep the break. That way your hours will be accurate.",
+        date: new Date("2025-09-23T15:45:00Z"),
+        isAnswered: true
+      }
+    ]
   },
 
   // More pending timesheets for approval workflow testing
@@ -268,7 +291,7 @@ export const dummyTimesheets: Timesheet[] = [
     overtimeMinutes: 0,
     breakMinutes: 60,
     status: "approved",
-    reviewedBy: "user-manager",
+    reviewedBy: "user-002",
     reviewedAt: new Date("2025-09-22T09:00:00Z")
   }
 ];
@@ -337,7 +360,7 @@ export const dummySchedules: Schedule[] = [
         startTime: "09:00",
         endTime: "17:00",
         labouringMinutes: 480,
-        allowedBrakeMinutes: 60
+        allowedBrakeMinutes: 10
       },
       {
         id: "sd-004",

@@ -2,26 +2,30 @@
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { DrawerType, drawerRegistry } from '@/shared/drawer/drawerRegistry'
 
-interface DrawerState {
-  isOpen: boolean
-  isClosing: boolean
-  isExpanded: boolean
-  selectedId: string | null
-  selectedType: string | null
+export interface DrawerStackItem {
+  id: string
+  type: DrawerType
+  title: string
 }
 
 interface DrawerContextType {
   // State
+  stack: DrawerStackItem[]
   isOpen: boolean
-  isClosing: boolean
   isExpanded: boolean
-  selectedId: string | null
-  selectedType: string | null
+  direction: number
+
+  // Current item (top of stack)
+  current: DrawerStackItem | null
 
   // Actions
-  openDrawer: (id: string, type: string) => void
-  closeDrawer: () => void
+  open: (id: string, type: DrawerType) => void
+  close: () => void
+  navigateTo: (id: string, type: DrawerType) => void
+  navigateBack: () => void
+  navigateToIndex: (index: number) => void
   toggleExpand: () => void
   setExpanded: (expanded: boolean) => void
 }
@@ -45,134 +49,142 @@ export function DrawerProvider({ children }: DrawerProviderProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
-  const [state, setState] = useState<DrawerState>({
-    isOpen: false,
-    isClosing: false,
-    isExpanded: false,
-    selectedId: null,
-    selectedType: null
-  })
+  const [stack, setStack] = useState<DrawerStackItem[]>([])
+  const [isExpanded, setIsExpandedState] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [direction, setDirection] = useState(1)
 
-  // Initialize state from URL on mount
+  // Derived state
+  const isOpen = stack.length > 0
+  const current = stack.length > 0 ? stack[stack.length - 1] ?? null : null
+
+  // Parse drawer parameter from URL: "type:id,type:id,..."
+  const parseDrawerParam = useCallback((param: string): DrawerStackItem[] => {
+    if (!param) return []
+
+    const items: DrawerStackItem[] = []
+    const pairs = param.split(',')
+
+    for (const pair of pairs) {
+      const [type, id] = pair.split(':')
+      if (type && id && type in drawerRegistry) {
+        const drawerType = type as DrawerType
+        const title = drawerRegistry[drawerType].getTitle(id)
+        items.push({ id, type: drawerType, title })
+      }
+    }
+
+    return items
+  }, [])
+
+  // Encode stack to URL parameter
+  const encodeStackToUrl = useCallback((stack: DrawerStackItem[]): string => {
+    if (stack.length === 0) return ''
+    return stack.map(item => `${item.type}:${item.id}`).join(',')
+  }, [])
+
+  // Initialize from URL on mount
   useEffect(() => {
-    const urlParts = pathname.split('/')
-    const detailId = searchParams.get('detail')
-    const detailType = searchParams.get('type')
+    const drawerParam = searchParams.get('drawer')
     const expanded = searchParams.get('expanded') === 'true'
 
-    if (detailId) {
-      setState({
-        isOpen: true,
-        isClosing: false,
-        isExpanded: expanded,
-        selectedId: detailId,
-        selectedType: detailType || urlParts[2] || 'unknown' // Prefer URL param, fallback to path segment
-      })
-    } else {
-      // If no detail ID, close the drawer
-      setState(prev => ({
-        ...prev,
-        isOpen: false,
-        isClosing: false,
-        selectedId: null,
-        selectedType: null
-      }))
+    if (drawerParam) {
+      const items = parseDrawerParam(drawerParam)
+      setStack(items)
+      setIsExpandedState(expanded)
     }
-  }, [pathname, searchParams])
 
-  const openDrawer = useCallback((id: string, type: string) => {
-    // Update URL with query parameters instead of path segments
+    setIsInitialized(true)
+  }, []) // Only run on mount
+
+  // Sync stack to URL whenever it changes (after initialization)
+  useEffect(() => {
+    if (!isInitialized) return
+
     const params = new URLSearchParams(searchParams.toString())
-    params.set('detail', id)
-    params.set('type', type)
 
-    if (state.isExpanded) {
-      params.set('expanded', 'true')
+    if (stack.length > 0) {
+      params.set('drawer', encodeStackToUrl(stack))
+      if (isExpanded) {
+        params.set('expanded', 'true')
+      } else {
+        params.delete('expanded')
+      }
+    } else {
+      params.delete('drawer')
+      params.delete('expanded')
     }
 
     const queryString = params.toString()
-    const finalUrl = `${pathname}?${queryString}`
+    const newUrl = queryString ? `${pathname}?${queryString}` : pathname
 
-    router.push(finalUrl, { scroll: false })
+    router.replace(newUrl, { scroll: false })
+  }, [stack, isExpanded, pathname, isInitialized])
 
-    // Note: State will be set by the useEffect when URL changes
-  }, [pathname, searchParams, router, state.isExpanded])
+  // Open drawer (new stack)
+  const open = useCallback((id: string, type: DrawerType) => {
+    const title = drawerRegistry[type].getTitle(id)
+    setStack([{ id, type, title }])
+  }, [])
 
-  const closeDrawer = useCallback(() => {
-    // First, set closing state to trigger exit animation
-    setState(prev => ({
-      ...prev,
-      isClosing: true
-    }))
+  // Close drawer - just clear the stack, animation handled by AnimatePresence
+  const close = useCallback(() => {
+    setStack([])
+    setIsExpandedState(false)
+  }, [])
 
-    // After animation completes, actually close the drawer
-    setTimeout(() => {
-      setState(prev => ({
-        ...prev,
-        isOpen: false,
-        isClosing: false,
-        selectedId: null,
-        selectedType: null
-      }))
+  // Navigate to new item (push to stack)
+  const navigateTo = useCallback((id: string, type: DrawerType) => {
+    const title = drawerRegistry[type].getTitle(id)
+    setDirection(1) // Forward
+    setStack(prev => [...prev, { id, type, title }])
+  }, [])
 
-      // Remove detail, type and expanded parameters from URL
-      const params = new URLSearchParams(searchParams.toString())
-      params.delete('detail')
-      params.delete('type')
-      params.delete('expanded')
+  // Navigate back (pop from stack)
+  const navigateBack = useCallback(() => {
+    setDirection(-1) // Backward
+    setStack(prev => {
+      if (prev.length <= 1) {
+        return [] // Close drawer if only one item
+      }
+      return prev.slice(0, -1)
+    })
+  }, [])
 
-      const queryString = params.toString()
-      const finalUrl = queryString ? `${pathname}?${queryString}` : pathname
+  // Navigate to specific index (breadcrumb click)
+  const navigateToIndex = useCallback((index: number) => {
+    setStack(prev => {
+      // Determine direction based on where we're going
+      if (index < prev.length - 1) {
+        setDirection(-1) // Going backward
+      }
+      return prev.slice(0, index + 1)
+    })
+  }, [])
 
-      router.push(finalUrl, { scroll: false })
-    }, 300)
-  }, [pathname, searchParams, router])
-
+  // Toggle expand
   const toggleExpand = useCallback(() => {
-    setState(prev => ({ ...prev, isExpanded: !prev.isExpanded }))
+    setIsExpandedState(prev => !prev)
+  }, [])
 
-    // Update URL with expanded state
-    const params = new URLSearchParams(searchParams.toString())
-
-    if (!state.isExpanded) {
-      params.set('expanded', 'true')
-    } else {
-      params.delete('expanded')
-    }
-
-    const queryString = params.toString()
-    const finalUrl = queryString ? `${pathname}?${queryString}` : pathname
-
-    router.push(finalUrl, { scroll: false })
-  }, [pathname, searchParams, router, state.isExpanded])
-
+  // Set expanded state
   const setExpanded = useCallback((expanded: boolean) => {
-    setState(prev => ({ ...prev, isExpanded: expanded }))
-
-    const params = new URLSearchParams(searchParams.toString())
-
-    if (expanded) {
-      params.set('expanded', 'true')
-    } else {
-      params.delete('expanded')
-    }
-
-    const queryString = params.toString()
-    const finalUrl = queryString ? `${pathname}?${queryString}` : pathname
-
-    router.push(finalUrl, { scroll: false })
-  }, [pathname, searchParams, router])
+    setIsExpandedState(expanded)
+  }, [])
 
   const contextValue: DrawerContextType = {
-    isOpen: state.isOpen,
-    isClosing: state.isClosing,
-    isExpanded: state.isExpanded,
-    selectedId: state.selectedId,
-    selectedType: state.selectedType,
-    openDrawer,
-    closeDrawer,
+    stack,
+    isOpen,
+    isExpanded,
+    direction,
+    current,
+    open,
+    close,
+    navigateTo,
+    navigateBack,
+    navigateToIndex,
     toggleExpand,
-    setExpanded
+    setExpanded,
   }
 
   return (

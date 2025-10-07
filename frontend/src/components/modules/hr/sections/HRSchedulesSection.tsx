@@ -1,27 +1,16 @@
 
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useNavigation } from '@/shared/contexts'
-import { DataList } from '@/components/ui/datalist'
+import React, { useEffect } from 'react'
+import { useNavigation, useDrawer } from '@/shared/contexts'
+import { DataList, Cell } from '@/components/ui/datalist'
+import type { DataListColumn } from '@/components/ui/datalist'
 import { dummySchedules } from '@/data/dummy/hr'
-import { Schedule } from '@/shared/types'
-import { DataListColumn } from '@/components/ui/datalist/types'
-import { ScheduleDetailsDrawer } from '../drawers/ScheduleDetailsDrawer'
-
-// Import cell components
-import {
-  TextCell,
-  ActionsCell
-} from '@/components/ui/datalist/cells'
-
-import { SectionHeader } from '@/components/ui/SectionHeader'
-
-import { useDrawer } from '@/shared/hooks/useDrawer'
+import type { Schedule } from '@/shared/types'
 
 export default function HRSchedulesSection() {
   const { setSelectedModule, setSelectedSection } = useNavigation()
-  const { selectedItem: selectedSchedule, isDrawerOpen, openDrawer, closeDrawer } = useDrawer<Schedule>()
+  const { open: openDrawer } = useDrawer()
 
   useEffect(() => {
     setSelectedModule('hr')
@@ -77,11 +66,6 @@ export default function HRSchedulesSection() {
           pageSize={10}
         />
       </div>
-      <ScheduleDetailsDrawer
-        schedule={selectedSchedule}
-        isOpen={isDrawerOpen}
-        onClose={closeDrawer}
-      />
-    </>
+    </div>
   )
 }

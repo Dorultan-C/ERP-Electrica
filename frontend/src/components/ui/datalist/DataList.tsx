@@ -1,43 +1,24 @@
-'use client'
+"use client";
 
-import React from 'react'
-import { DataListProps } from './types'
-import { useDataList } from './utils/useDataList'
-import { SearchBar } from './components/SearchBar'
-import { FilterBar } from './components/FilterBar'
-import { TableHeader } from './components/TableHeader'
-import { TableBody } from './components/TableBody'
-import { Pagination } from './components/Pagination'
-
-import { Skeleton } from '../Skeleton'
-
-function SkeletonLoader({ columns, pageSize }: { columns: DataListProps<any>['columns'], pageSize: number }) {
-  return (
-    <tbody>
-      {[...Array(pageSize)].map((_, i) => (
-        <tr key={i} className="animate-fade-in">
-          {columns.map(col => (
-            <td key={col.id} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-              <Skeleton className="h-4 w-full" />
-            </td>
-          ))}
-        </tr>
-      ))}
-    </tbody>
-  )
-}
+import React from "react";
+import { DataListProps } from "./types";
+import { useDataList } from "./utils/useDataList";
+import { SearchBar } from "./components/SearchBar";
+import { FilterBar } from "./components/FilterBar";
+import { TableHeader } from "./components/TableHeader";
+import { TableBody } from "./components/TableBody";
+import { Pagination } from "./components/Pagination";
 
 export function DataList<T extends { id: string }>({
   data,
   columns,
-  className = '',
+  className = "",
   searchable = true,
   filterableColumns,
   sortable = true,
   pagination = true,
-  pageSize = 10,
+  pageSize = 20,
   onRowClick,
-  loading = false,
 }: DataListProps<T>) {
   const {
     table,
@@ -46,8 +27,13 @@ export function DataList<T extends { id: string }>({
     activeFilters,
     setFilter,
     clearFilters,
+    sortConfig,
+    setSortConfig,
+    currentPage,
+    setCurrentPage,
+    totalPages,
     hasActiveFilters,
-  } = useDataList<T>({
+  } = useDataList({
     data,
     columns,
     searchable,
@@ -55,14 +41,15 @@ export function DataList<T extends { id: string }>({
     sortable,
     pagination,
     pageSize,
-  })
+  });
 
-  const { getHeaderGroups, getRowModel } = table
-
-  const hasFilters = filterableColumns && filterableColumns.length > 0
+  const filterableColumns = columns.filter((col) => col.filterable);
+  const hasFilters = filterableColumns.length > 0;
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm ${className}`}>
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm ${className}`}
+    >
       {/* Search and Filter Controls */}
       {(searchable || hasFilters) && (
         <div className="p-4 border-b border-gray-200 dark:border-gray-700 space-y-4">
@@ -100,19 +87,31 @@ export function DataList<T extends { id: string }>({
         {!loading && getRowModel().rows.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-500 dark:text-gray-400">
-              <p className="text-base font-medium text-gray-900 dark:text-white mb-1">No data found</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {hasActiveFilters || searchQuery ? 'Try adjusting your search or filters' : 'There are no items to display'}
+              <p className="text-base font-medium text-gray-900 dark:text-white mb-1">
+                No data found
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {hasActiveFilters || searchQuery
+                  ? "Try adjusting your search or filters"
+                  : "There are no items to display"}
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Pagination */}
-      {pagination && table.getPageCount() > 1 && (
-        <Pagination table={table} />
-      )}
+      <div className="px-4 pb-4">
+        {/* Pagination */}
+        {pagination && totalPages > 1 && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            setCurrentPage={setCurrentPage}
+            totalItems={data.length}
+            pageSize={pageSize}
+          />
+        )}
+      </div>
     </div>
-  )
+  );
 }

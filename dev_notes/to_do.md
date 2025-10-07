@@ -3,16 +3,8 @@
 ### First priority
 
 #### - Attendance
-- [ ] AttendanceList mobile responsiveness
-- [ ] AttendanceList employment history
-- [ ] AttendanceTracker employment history
-- [ ] AttendanceList current user top of dropdown
-- [ ] AttendanceList create timesheet/request timesheet button, absent days/optional work days
-- [ ] AttendanceList date picker console error
-- [ ] DB view
-- [ ] update use 24h clock
-- [ ] use schedules in AttendanceTracker
-- [ ] revise attendance tracker wisibility
+
+- [ ] edit drawer
 
 #### - Users
 
